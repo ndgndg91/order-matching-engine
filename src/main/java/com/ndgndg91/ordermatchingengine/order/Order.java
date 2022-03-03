@@ -16,4 +16,8 @@ public class Order {
     private int shares;
     private PriceType priceType;
     private BigDecimal price;
+
+    public boolean isMarKetOrder() {
+        return priceType == PriceType.MARKET;
+    }
 }

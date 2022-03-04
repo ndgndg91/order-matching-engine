@@ -1,7 +1,8 @@
-package com.ndgndg91.ordermatchingengine.order;
+package com.ndgndg91.ordermatchingengine.order.controller;
 
 import com.ndgndg91.ordermatchingengine.global.ApiResponse;
 import com.ndgndg91.ordermatchingengine.global.OrderServiceException;
+import com.ndgndg91.ordermatchingengine.order.Symbol;
 import com.ndgndg91.ordermatchingengine.order.dto.request.AddOrderRequest;
 import com.ndgndg91.ordermatchingengine.order.dto.response.OrderBookResponse;
 import com.ndgndg91.ordermatchingengine.order.service.Engine;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.net.URI;
 
 @Slf4j
@@ -38,9 +40,9 @@ public class OrderController {
 
     @PostMapping("/apis/orders")
     public ResponseEntity<ApiResponse<Void>> newOrder(
-            @RequestBody final AddOrderRequest request
+            @RequestBody @Valid final AddOrderRequest request
     ) {
-//        engine.addOrder();
-        return ResponseEntity.created(URI.create("")).build();
+        engine.addOrder(request);
+        return ResponseEntity.created(URI.create("/apis/order-books/" + request.getSymbol())).build();
     }
 }

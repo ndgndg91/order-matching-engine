@@ -12,9 +12,11 @@ import java.math.BigDecimal;
 
 @Getter
 @ToString
-public final class AddOrderRequest {
+public final class ModifyOrderRequest {
+    @NotNull(message = "order id is required")
+    private String orderId;
     @ValueOfEnum(enumClass = OrderType.class)
-    @NotNull(message = "orderType is required")
+    @NotNull(message = "order type is required")
     private String orderType;
     @ValueOfEnum(enumClass = Symbol.class)
     @NotNull(message = "symbol is required")

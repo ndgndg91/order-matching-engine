@@ -1,12 +1,16 @@
 package com.ndgndg91.ordermatchingengine.order.service;
 
+import com.ndgndg91.ordermatchingengine.global.OrderServiceException;
 import com.ndgndg91.ordermatchingengine.order.*;
 import com.ndgndg91.ordermatchingengine.order.dto.request.AddOrderRequest;
+import com.ndgndg91.ordermatchingengine.order.dto.request.CancelOrderRequest;
+import com.ndgndg91.ordermatchingengine.order.dto.request.ModifyOrderRequest;
 import com.ndgndg91.ordermatchingengine.order.event.OrderMatchTriggerEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -38,14 +42,41 @@ public class Engine {
         publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol()));
     }
 
-    public void modifyOrder(Order order) {
+    public void modifyOrder(ModifyOrderRequest request) {
+        final var order = Order.builder()
+                .orderId(request.getOrderId())
+                .orderType(OrderType.valueOf(request.getOrderType()))
+                .symbol(Symbol.valueOf(request.getSymbol()))
+                .shares(request.getShares())
+                .priceType(PriceType.valueOf(request.getPriceType()))
+                .price(request.getPrice())
+                .timestamp(LocalDateTime.now())
+                .build();
         orderBooks.modifyOrder(order);
         publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol()));
     }
 
-    public void cancelOrder(Order order) {
+    public void cancelOrder(CancelOrderRequest request) {
+        final var order = Order.builder()
+                .orderId(request.getOrderId())
+                .orderType(OrderType.valueOf(request.getOrderType()))
+                .symbol(Symbol.valueOf(request.getSymbol()))
+                .build();
         orderBooks.cancelOrder(order);
         publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol()));
+    }
+
+    public Optional<OrderEntry> pollBids(Symbol symbol) {
+        OrderBook orderBook = orderBooks.findOrderBooksBySymbol(symbol)
+                .orElseThrow(() -> new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "not found order book by : " + symbol));
+
+        return orderBook.bidsPoll();
+    }
+
+    public Optional<OrderEntry> pollAsks(Symbol symbol) {
+        OrderBook orderBook = orderBooks.findOrderBooksBySymbol(symbol)
+                .orElseThrow(() -> new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "not found order book by : " + symbol));
+        return orderBook.asksPoll();
     }
 
     @Async

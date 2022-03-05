@@ -4,112 +4,101 @@ import com.ndgndg91.ordermatchingengine.global.OrderServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
 @Slf4j
 public class OrderBook {
-    private final Queue<OrderEntry> bids;
-    private final Queue<OrderEntry> asks;
+    private final Queue<OrderEntry> limitBids;
+    private final Queue<OrderEntry> limitAsks;
+    private final Queue<OrderEntry> marketBids;
+    private final Queue<OrderEntry> marketAsks;
 
     public OrderBook() {
-        this.bids = new PriorityBlockingQueue<>(100, (orderEntry, t1) -> {
-            if (orderEntry.getPriceType() == PriceType.MARKET) {
-                return -1;
-            }
-
-            return t1.getPrice().compareTo(orderEntry.getPrice());
-        });
-        this.asks = new PriorityBlockingQueue<>(100, (orderEntry, t1) -> {
-            if (orderEntry.getPriceType() == PriceType.MARKET) {
-                return -1;
-            }
-
-
-            int c = orderEntry.getPrice().compareTo(t1.getPrice());
-            if (c == 0) {
-                return orderEntry.getTimestamp().compareTo(t1.getTimestamp());
-            }
-
+        this.limitBids = new PriorityBlockingQueue<>(100, (orderEntry, t1) -> {
+            int c = t1.getPrice().compareTo(orderEntry.getPrice());
+            if (c == 0) return orderEntry.getTimestamp().compareTo(t1.getTimestamp());
             return c;
         });
+        this.limitAsks = new PriorityBlockingQueue<>(100, Comparator.comparing(OrderEntry::getPrice));
+        this.marketBids = new LinkedBlockingQueue<>();
+        this.marketAsks = new LinkedBlockingQueue<>();
+    }
+
+    private Queue<OrderEntry> selectQueue(PriceType priceType, OrderType orderType) {
+        switch (priceType) {
+            case MARKET:
+                return marketQueue(orderType);
+            case LIMIT:
+                return limitQueue(orderType);
+            default:
+                throw new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "not found appropriate queue");
+        }
+    }
+
+    private Queue<OrderEntry> limitQueue(OrderType orderType) {
+        switch (orderType) {
+            case BID:
+                return this.limitBids;
+            case ASK:
+                return this.limitAsks;
+            default:
+                throw new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "not found appropriate queue");
+        }
+    }
+
+    private Queue<OrderEntry> marketQueue(OrderType orderType) {
+        switch (orderType) {
+            case BID:
+                return this.marketBids;
+            case ASK:
+                return this.marketAsks;
+            default:
+                throw new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "not found appropriate queue");
+        }
     }
 
     public void addOrder(Order order) {
         OrderEntry e = new OrderEntry(order);
-        switch (order.getOrderType()) {
-            case ASK:
-                asks.add(e);
-                break;
-            case BID:
-                bids.add(e);
-                break;
-            default:
-                throw new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "when adding order, order type is abnormal.");
-        }
+        selectQueue(order.getPriceType(), order.getOrderType()).add(e);
     }
 
     public void modifyOrder(Order order) {
-        OrderEntry orderEntry;
-        switch (order.getOrderType()) {
-            case ASK:
-                orderEntry = asks.stream()
-                        .filter(e -> e.getOrderId().equals(order.getOrderId()))
-                        .findFirst().
-                        orElseThrow(() -> new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "when modifying order, not found order " + order.getOrderId()));
-                asks.remove(orderEntry);
-                asks.add(new OrderEntry(order));
-                break;
-            case BID:
-                orderEntry = bids.stream()
-                        .filter(e -> e.getOrderId().equals(order.getOrderId()))
-                        .findFirst().
-                        orElseThrow(() -> new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "when modifying order, not found order " + order.getOrderId()));
-                bids.remove(orderEntry);
-                bids.add(new OrderEntry(order));
-                break;
-            default:
-                throw new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "when modifying order, order type is abnormal.");
-        }
-
+        Queue<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
+        OrderEntry oe = queue.stream()
+                .parallel()
+                .filter(e -> e.getOrderId().equals(order.getOrderId()))
+                .findFirst()
+                .orElseThrow(() -> new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "when modifying order, not found order " + order.getOrderId()));
+        queue.remove(oe);
+        queue.add(new OrderEntry(order));
     }
 
     public void cancelOrder(Order order) {
-        switch (order.getOrderType()) {
-            case ASK:
-                asks.remove(new OrderEntry(order));
-                break;
-            case BID:
-                bids.remove(new OrderEntry(order));
-                break;
-            default:
-                throw new IllegalStateException("Order Type is abnormal.");
+        Queue<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
+
+        OrderEntry target = queue.stream()
+                .parallel()
+                .filter(e -> e.getOrderId().equals(order.getOrderId()))
+                .findFirst()
+                .orElseThrow(() -> new OrderServiceException(null, HttpStatus.BAD_REQUEST.value(), "when canceling order, not found order : " + order.getOrderId()));
+        queue.remove(target);
+    }
+
+    public Optional<OrderEntry> bidsPoll() {
+        if (!this.marketBids.isEmpty()) {
+            return Optional.ofNullable(this.marketBids.poll());
         }
+
+        return Optional.ofNullable(this.limitBids.poll());
     }
 
-    public OrderEntry bidsPoll() {
-        return this.bids.poll();
-    }
+    public Optional<OrderEntry> asksPoll() {
+        if (!this.marketAsks.isEmpty()) {
+            return Optional.ofNullable(this.marketAsks.poll());
+        }
 
-    public boolean bidsEmpty() {
-        return this.bids.isEmpty();
-    }
-
-    public OrderEntry asksPoll() {
-        return this.asks.poll();
-    }
-
-    public boolean asksEmpty() {
-        return this.asks.isEmpty();
-    }
-
-    public List<OrderEntry> bidsToList() {
-        return new ArrayList<>(this.bids);
-    }
-
-    public List<OrderEntry> asksToList() {
-        return new ArrayList<>(this.asks);
+        return Optional.ofNullable(this.limitAsks.poll());
     }
 }

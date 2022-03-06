@@ -10,12 +10,14 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 @Slf4j
 public class OrderBook {
+    private final Symbol symbol;
     private final Queue<OrderEntry> limitBids;
     private final Queue<OrderEntry> limitAsks;
     private final Queue<OrderEntry> marketBids;
     private final Queue<OrderEntry> marketAsks;
 
-    public OrderBook() {
+    public OrderBook(Symbol symbol) {
+        this.symbol = symbol;
         this.limitBids = new PriorityBlockingQueue<>(100, (orderEntry, t1) -> {
             int c = t1.getPrice().compareTo(orderEntry.getPrice());
             if (c == 0) return orderEntry.getTimestamp().compareTo(t1.getTimestamp());
@@ -101,4 +103,74 @@ public class OrderBook {
 
         return Optional.ofNullable(this.limitAsks.poll());
     }
+
+    public MatchResult match(PriceType priceType, OrderType orderType) {
+        switch (priceType) {
+            case LIMIT:
+                return matchLimitOrder();
+            case MARKET:
+//                return matchMarketOrder(orderType);
+            default:
+                // pass
+                return null;
+        }
+    }
+
+    private MatchResult matchLimitOrder() {
+        OrderEntry bid = limitBids.peek();
+        OrderEntry ask = limitAsks.peek();
+        if (ask == null || bid == null) {
+            return null;
+        }
+
+        int c = bid.getPrice().compareTo(ask.getPrice());
+        int d = bid.shares() - ask.shares();
+        // matched
+        if (c >= 0) {
+            if (d == 0) { // totally matched
+                limitBids.poll();
+                limitAsks.poll();
+                return MatchResult.exact(bid, symbol, ask);
+            } else if (d > 0) { // need more ask
+                List<OrderEntry> temp = new ArrayList<>();
+                temp.add(limitAsks.poll());
+                while (d > 0) {
+                    OrderEntry peek = limitAsks.peek();
+                    if (peek == null) return null;
+                    if (d < peek.shares()) {
+                        peek.partialMatched(bid, d);
+                        temp.add(peek);
+                        d = 0;
+                    } else if (d > peek.shares()) {
+                        d -= peek.shares();
+                        temp.add(limitAsks.poll());
+                    } else { // d == peek.shares()
+                        temp.add(limitAsks.poll());
+                        break;
+                    }
+                }
+
+                return MatchResult.bigBid(bid, symbol, temp);
+            } else { // ask has more shares
+                ask.partialMatched(bid);
+                limitBids.poll();
+                return MatchResult.bigAsk(bid, symbol, ask);
+            }
+        } else { // not matched
+            return null;
+        }
+    }
+
+//    private MatchResult matchMarketOrder(OrderType orderType) {
+//        switch (orderType) {
+//            case BID:
+//                    return null;
+//            case ASK:
+//                return null;
+//            default:
+//                return null;
+//        }
+//    }
+
+
 }

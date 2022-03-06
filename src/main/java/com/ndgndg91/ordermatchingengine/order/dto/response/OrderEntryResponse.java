@@ -15,6 +15,8 @@ public final class OrderEntryResponse {
     private final String priceType;
     private final BigDecimal price;
     private final LocalDateTime timestamp;
+    private final boolean partialMatched;
+    private final int currentShares;
 
     public OrderEntryResponse(final OrderEntry orderEntry) {
         this.orderId = orderEntry.getOrderId();
@@ -22,5 +24,7 @@ public final class OrderEntryResponse {
         this.priceType = orderEntry.getPriceType().name();
         this.price = orderEntry.getPrice();
         this.timestamp = orderEntry.getTimestamp();
+        this.partialMatched = orderEntry.isPartialMatched();
+        this.currentShares = orderEntry.shares();
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class Engine {
     private final OrderBooks orderBooks;
+    private final MatchedOrders matchedOrders;
     private final ApplicationEventPublisher publisher;
 
     public void addOrder(AddOrderRequest request) {
@@ -39,7 +41,7 @@ public class Engine {
 
         log.info("{}", order);
         orderBooks.addOrder(order);
-        publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol()));
+        publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol(), order.getPriceType(), order.getOrderType()));
     }
 
     public void modifyOrder(ModifyOrderRequest request) {
@@ -53,7 +55,7 @@ public class Engine {
                 .timestamp(LocalDateTime.now())
                 .build();
         orderBooks.modifyOrder(order);
-        publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol()));
+        publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol(), order.getPriceType(), order.getOrderType()));
     }
 
     public void cancelOrder(CancelOrderRequest request) {
@@ -63,7 +65,7 @@ public class Engine {
                 .symbol(Symbol.valueOf(request.getSymbol()))
                 .build();
         orderBooks.cancelOrder(order);
-        publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol()));
+        publisher.publishEvent(new OrderMatchTriggerEvent(order.getSymbol(), order.getPriceType(), order.getOrderType()));
     }
 
     public Optional<OrderEntry> pollBids(Symbol symbol) {
@@ -79,15 +81,15 @@ public class Engine {
         return orderBook.asksPoll();
     }
 
+    public List<MatchResult> findAllMatchResults(Symbol symbol) {
+        return matchedOrders.findAll(symbol);
+    }
+
     @Async
     @EventListener
     public void match(OrderMatchTriggerEvent event) {
         log.info("{}", event);
-        orderBooks.match(event.getSymbol());
+        orderBooks.match(event.getSymbol(), event.getPriceType(), event.getOrderType())
+                .ifPresent(matchedOrders::addMatchedOrder);
     }
-
-    public Optional<OrderBook> findOrderBookBySymbol(final Symbol symbol) {
-        return orderBooks.findOrderBooksBySymbol(symbol);
-    }
-
 }

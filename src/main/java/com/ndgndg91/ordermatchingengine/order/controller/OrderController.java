@@ -2,6 +2,7 @@ package com.ndgndg91.ordermatchingengine.order.controller;
 
 import com.ndgndg91.ordermatchingengine.global.ApiResponse;
 import com.ndgndg91.ordermatchingengine.global.OrderServiceException;
+import com.ndgndg91.ordermatchingengine.order.MatchResult;
 import com.ndgndg91.ordermatchingengine.order.OrderEntry;
 import com.ndgndg91.ordermatchingengine.order.Symbol;
 import com.ndgndg91.ordermatchingengine.order.dto.request.AddOrderRequest;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.List;
 
 @Slf4j
 @Validated
@@ -74,5 +76,13 @@ public class OrderController {
                 .orElseThrow(() -> new OrderServiceException(request.getRequestURI(), HttpStatus.BAD_REQUEST.value(), "not found ask entry by : " + symbol));
         OrderEntryResponse response = new OrderEntryResponse(orderEntry);
         return ResponseEntity.ok(new ApiResponse<>(response));
+    }
+
+    @GetMapping("/apis/orders/{symbol}/matched")
+    public ResponseEntity<ApiResponse<List<MatchResult>>> matched(
+            @PathVariable @ValueOfEnum(enumClass = Symbol.class) final String symbol
+    ){
+        List<MatchResult> matchResults = engine.findAllMatchResults(Symbol.valueOf(symbol));
+        return ResponseEntity.ok(new ApiResponse<>(matchResults));
     }
 }

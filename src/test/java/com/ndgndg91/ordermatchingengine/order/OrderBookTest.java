@@ -16,7 +16,7 @@ class OrderBookTest {
 
     @Test
     void addBids() {
-        OrderBook orderBook = new OrderBook();
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
         Order o1 = Order.builder()
                 .orderId(UUID.randomUUID().toString())
                 .orderType(OrderType.BID)
@@ -116,7 +116,7 @@ class OrderBookTest {
     @Test
     void modifyBids() {
         //given
-        OrderBook orderBook = new OrderBook();
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
         Order o1 = Order.builder()
                 .orderId(UUID.randomUUID().toString())
                 .orderType(OrderType.BID)
@@ -192,7 +192,7 @@ class OrderBookTest {
     @Test
     void cancelBids() {
         // given
-        OrderBook orderBook = new OrderBook();
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
 
         Order o1 = Order.builder()
                 .orderId(UUID.randomUUID().toString())
@@ -254,7 +254,7 @@ class OrderBookTest {
 
     @Test
     void addAsks() {
-        OrderBook orderBook = new OrderBook();
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
 
         Order o1 = Order.builder()
                 .orderId(UUID.randomUUID().toString())
@@ -351,7 +351,7 @@ class OrderBookTest {
     @Test
     void modifyAsks() {
         //given
-        OrderBook orderBook = new OrderBook();
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
         Order o1 = Order.builder()
                 .orderId(UUID.randomUUID().toString())
                 .orderType(OrderType.ASK)
@@ -427,7 +427,7 @@ class OrderBookTest {
     @Test
     void cancelAsks() {
         // given
-        OrderBook orderBook = new OrderBook();
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
 
         Order o1 = Order.builder()
                 .orderId(UUID.randomUUID().toString())

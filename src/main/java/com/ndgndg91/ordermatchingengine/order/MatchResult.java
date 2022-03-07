@@ -19,7 +19,7 @@ public class MatchResult {
     private final PriceType priceType;
     private final BigDecimal price;
     private final LocalDateTime timestamp;
-    private final List<MatchedEntry> os = new ArrayList<>();
+    private final List<MatchedEntry> matchedEntries = new ArrayList<>();
 
     public static MatchResult exact(OrderEntry e, Symbol symbol, OrderEntry t) {
         return new MatchResult(e, symbol, t);
@@ -41,7 +41,7 @@ public class MatchResult {
         this.priceType = e.getPriceType();
         this.price = e.getPrice();
         this.timestamp = e.getTimestamp();
-        this.os.add(new MatchedEntry(t, e.shares()));
+        this.matchedEntries.add(new MatchedEntry(t, e.shares()));
     }
 
     private MatchResult(OrderEntry e, Symbol symbol, List<OrderEntry> asks) {
@@ -53,10 +53,10 @@ public class MatchResult {
         this.price = e.getPrice();
         this.timestamp = e.getTimestamp();
         List<MatchedEntry> entries = asks.stream().map(MatchedEntry::new).collect(Collectors.toList());
-        this.os.addAll(entries);
+        this.matchedEntries.addAll(entries);
     }
 
     public boolean matchedShare() {
-        return shares == os.stream().mapToInt(MatchedEntry::getShares).sum();
+        return shares == matchedEntries.stream().mapToInt(MatchedEntry::getShares).sum();
     }
 }

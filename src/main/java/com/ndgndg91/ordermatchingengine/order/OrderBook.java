@@ -18,12 +18,16 @@ public class OrderBook {
 
     public OrderBook(Symbol symbol) {
         this.symbol = symbol;
-        this.limitBids = new PriorityBlockingQueue<>(100, (orderEntry, t1) -> {
-            int c = t1.getPrice().compareTo(orderEntry.getPrice());
-            if (c == 0) return orderEntry.getTimestamp().compareTo(t1.getTimestamp());
+        this.limitBids = new PriorityBlockingQueue<>(100, (e1, e2) -> {
+            int c = e2.getPrice().compareTo(e1.getPrice());
+            if (c == 0) return e1.getTimestamp().compareTo(e2.getTimestamp());
             return c;
         });
-        this.limitAsks = new PriorityBlockingQueue<>(100, Comparator.comparing(OrderEntry::getPrice));
+        this.limitAsks = new PriorityBlockingQueue<>(100, (e1, e2) -> {
+            int c = e1.getPrice().compareTo(e2.getPrice());
+            if (c == 0) return e1.getTimestamp().compareTo(e2.getTimestamp());
+            return c;
+        });
         this.marketBids = new LinkedBlockingQueue<>();
         this.marketAsks = new LinkedBlockingQueue<>();
     }
@@ -136,10 +140,15 @@ public class OrderBook {
                 temp.add(limitAsks.poll());
                 while (d > 0) {
                     OrderEntry peek = limitAsks.peek();
-                    if (peek == null) return null;
+                    if (peek == null) {
+                        limitAsks.addAll(temp);
+                        return null;
+                    }
+
                     if (d < peek.shares()) {
                         peek.partialMatched(bid, d);
                         temp.add(peek);
+                        limitBids.poll();
                         d = 0;
                     } else if (d > peek.shares()) {
                         d -= peek.shares();

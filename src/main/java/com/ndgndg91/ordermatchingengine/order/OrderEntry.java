@@ -78,7 +78,12 @@ public class OrderEntry {
         }
     }
 
+    public int partialShares() {
+        return partialMatchedEntries.stream().parallel().mapToInt(p -> p.shares).sum();
+    }
+
     @RequiredArgsConstructor
+    @ToString
     private static final class PartialMatched {
         private final String orderId;
         private final OrderType orderType;

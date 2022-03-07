@@ -28,7 +28,7 @@ public class MatchedEntry {
     public MatchedEntry(OrderEntry e) {
         this.orderId = e.getOrderId();
         this.orderType = e.getOrderType();
-        this.shares = e.shares();
+        this.shares = e.isPartialMatched() ? e.partialShares() : e.shares();
         this.priceType = e.getPriceType();
         this.price = e.getPrice();
         this.timestamp = e.getTimestamp();

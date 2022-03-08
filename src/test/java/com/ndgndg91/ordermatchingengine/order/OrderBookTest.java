@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -894,7 +895,14 @@ class OrderBookTest {
 
         MatchResult match2 = orderBook.match(PriceType.LIMIT, OrderType.BID);
         List<MatchedEntry> matchedEntries2 = match2.getMatchedEntries();
-        int sum = matchedEntries2.stream().mapToInt(MatchedEntry::getShares).sum();
+        int sum = match2.matchedShare();
+        BigDecimal ask9800Price = ask9800.getPrice().multiply(BigDecimal.valueOf(ask9800.getShares()));
+        BigDecimal ask9900Price = ask9900.getPrice().multiply(BigDecimal.valueOf(ask9900.getShares()));
+        BigDecimal ask10000Price = ask10000.getPrice().multiply(BigDecimal.valueOf(500));
+        BigDecimal askSums = ask9800Price.add(ask9900Price).add(ask10000Price);
+        int askTotalShares = ask9800.getShares() + ask9900.getShares() + 500;
+        BigDecimal askAveragePrice = askSums.divide(BigDecimal.valueOf(askTotalShares), RoundingMode.CEILING);
+        log.info("{} {}", askAveragePrice, match2.averagePrice());
         log.info("{}", match2);
 
         OrderEntry remainAsk = orderBook.asksPoll().orElseThrow();
@@ -920,9 +928,147 @@ class OrderBookTest {
         Assertions.assertThat(match2.getPrice()).isEqualTo(marketMaker.getPrice());
         Assertions.assertThat(match2.getShares()).isEqualTo(marketMaker.getShares());
         Assertions.assertThat(match2.getShares()).isEqualTo(sum);
+        Assertions.assertThat(match2.averagePrice()).isEqualTo(askAveragePrice);
 
         Assertions.assertThat(matchedEntries2.get(0).getOrderId()).isEqualTo(ask9800.getOrderId());
         Assertions.assertThat(matchedEntries2.get(1).getOrderId()).isEqualTo(ask9900.getOrderId());
         Assertions.assertThat(matchedEntries2.get(2).getOrderId()).isEqualTo(ask10000.getOrderId());
+    }
+
+    @Test
+    void bidMarketOrder() {
+        // given
+        OrderBook orderBook = new OrderBook(Symbol.FB);
+
+        Order askBid10000 = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.ASK)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(10_000))
+                .shares(1000)
+                .symbol(Symbol.FB)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order askBid9900 = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.ASK)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(9_900))
+                .shares(200)
+                .symbol(Symbol.FB)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order bidMarket = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.BID)
+                .priceType(PriceType.MARKET)
+                .shares(500)
+                .symbol(Symbol.FB)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        // when
+        orderBook.addOrder(askBid10000);
+        orderBook.addOrder(askBid9900);
+        orderBook.addOrder(bidMarket);
+
+        MatchResult match = orderBook.match(PriceType.MARKET, OrderType.BID);
+        List<MatchedEntry> matchedEntries = match.getMatchedEntries();
+        BigDecimal avgPrice = askBid9900.getPrice()
+                .multiply(BigDecimal.valueOf(200))
+                .add(askBid10000.getPrice().multiply(BigDecimal.valueOf(300)))
+                .divide(BigDecimal.valueOf(500), RoundingMode.CEILING);
+        log.info("{}", match);
+        log.info("{}", avgPrice);
+
+        // then
+        Assertions.assertThat(match).isNotNull();
+        Assertions.assertThat(matchedEntries).hasSize(2);
+
+        Assertions.assertThat(match.getOrderId()).isEqualTo(bidMarket.getOrderId());
+        Assertions.assertThat(match.averagePrice()).isEqualTo(avgPrice);
+        Assertions.assertThat(match.getShares()).isEqualTo(500);
+        Assertions.assertThat(match.getPriceType()).isEqualTo(PriceType.MARKET);
+
+        Assertions.assertThat(matchedEntries.get(0).getShares()).isEqualTo(200);
+        Assertions.assertThat(matchedEntries.get(1).getShares()).isEqualTo(300);
+        Assertions.assertThat(matchedEntries.get(0).getPrice()).isEqualTo(BigDecimal.valueOf(9_900));
+        Assertions.assertThat(matchedEntries.get(1).getPrice()).isEqualTo(BigDecimal.valueOf(10_000));
+    }
+
+    @Test
+    void askMarketOrder() {
+        // given
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
+
+        Order limitBid9500 = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.BID)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(9_500))
+                .shares(150)
+                .symbol(Symbol.AAPL)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order limitBid9450 = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.BID)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(9_450))
+                .shares(230)
+                .symbol(Symbol.AAPL)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order limitBid9480 = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.BID)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(9_480))
+                .shares(220)
+                .symbol(Symbol.AAPL)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order marketAsk = Order.builder()
+                .orderId(UUID.randomUUID().toString())
+                .orderType(OrderType.ASK)
+                .priceType(PriceType.MARKET)
+                .shares(550)
+                .symbol(Symbol.AAPL)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        // when
+        orderBook.addOrder(limitBid9500);
+        orderBook.addOrder(limitBid9480);
+        orderBook.addOrder(limitBid9450);
+        orderBook.addOrder(marketAsk);
+
+        MatchResult match = orderBook.match(PriceType.MARKET, OrderType.ASK);
+        List<MatchedEntry> matchedEntries = match.getMatchedEntries();
+        BigDecimal avgPrice = limitBid9500.getPrice().multiply(BigDecimal.valueOf(150))
+                .add(limitBid9480.getPrice().multiply(BigDecimal.valueOf(220)))
+                .add(limitBid9450.getPrice().multiply(BigDecimal.valueOf(180)))
+                .divide(BigDecimal.valueOf(550), RoundingMode.CEILING);
+        log.info("{}", match);
+
+        // then
+        Assertions.assertThat(match).isNotNull();
+        Assertions.assertThat(matchedEntries).hasSize(3);
+
+        Assertions.assertThat(match.getOrderId()).isEqualTo(marketAsk.getOrderId());
+        Assertions.assertThat(match.getShares()).isEqualTo(marketAsk.getShares());
+        Assertions.assertThat(match.averagePrice()).isEqualTo(avgPrice);
+
+        Assertions.assertThat(matchedEntries.get(0).getPrice()).isEqualTo(limitBid9500.getPrice());
+        Assertions.assertThat(matchedEntries.get(1).getPrice()).isEqualTo(limitBid9480.getPrice());
+        Assertions.assertThat(matchedEntries.get(2).getPrice()).isEqualTo(limitBid9450.getPrice());
+        Assertions.assertThat(matchedEntries.get(0).getShares()).isEqualTo(150);
+        Assertions.assertThat(matchedEntries.get(1).getShares()).isEqualTo(220);
+        Assertions.assertThat(matchedEntries.get(2).getShares()).isEqualTo(180);
     }
 }

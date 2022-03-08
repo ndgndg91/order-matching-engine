@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,42 +22,48 @@ public class MatchResult {
     private final LocalDateTime timestamp;
     private final List<MatchedEntry> matchedEntries = new ArrayList<>();
 
-    public static MatchResult exact(OrderEntry e, Symbol symbol, OrderEntry t) {
-        return new MatchResult(e, symbol, t);
+    public static MatchResult exact(OrderEntry bid, Symbol symbol, OrderEntry ask) {
+        return new MatchResult(bid, symbol, ask);
     }
 
-    public static MatchResult bigAsk(OrderEntry e, Symbol symbol, OrderEntry p) {
-        return new MatchResult(e, symbol, p);
+    public static MatchResult bigAsk(OrderEntry bid, Symbol symbol, OrderEntry ask) {
+        return new MatchResult(bid, symbol, ask);
     }
 
-    public static MatchResult bigBid(OrderEntry e, Symbol symbol, List<OrderEntry> asks) {
-        return new MatchResult(e, symbol, asks);
+    public static MatchResult bigBid(OrderEntry bid, Symbol symbol, List<OrderEntry> ask) {
+        return new MatchResult(bid, symbol, ask);
     }
 
-    private MatchResult(OrderEntry e, Symbol symbol, OrderEntry t) {
+    private MatchResult(OrderEntry bid, Symbol symbol, OrderEntry ask) {
         this.symbol = symbol;
-        this.orderId = e.getOrderId();
-        this.orderType = e.getOrderType();
-        this.shares = e.shares();
-        this.priceType = e.getPriceType();
-        this.price = e.getPrice();
-        this.timestamp = e.getTimestamp();
-        this.matchedEntries.add(new MatchedEntry(t, e.shares()));
+        this.orderId = bid.getOrderId();
+        this.orderType = bid.getOrderType();
+        this.shares = bid.shares();
+        this.priceType = bid.getPriceType();
+        this.price = bid.getPrice();
+        this.timestamp = bid.getTimestamp();
+        this.matchedEntries.add(new MatchedEntry(ask, bid.shares()));
     }
 
-    private MatchResult(OrderEntry e, Symbol symbol, List<OrderEntry> asks) {
+    private MatchResult(OrderEntry bid, Symbol symbol, List<OrderEntry> asks) {
         this.symbol = symbol;
-        this.orderId = e.getOrderId();
-        this.orderType = e.getOrderType();
-        this.shares = e.shares();
-        this.priceType = e.getPriceType();
-        this.price = e.getPrice();
-        this.timestamp = e.getTimestamp();
+        this.orderId = bid.getOrderId();
+        this.orderType = bid.getOrderType();
+        this.shares = bid.shares();
+        this.priceType = bid.getPriceType();
+        this.price = bid.getPrice();
+        this.timestamp = bid.getTimestamp();
         List<MatchedEntry> entries = asks.stream().map(MatchedEntry::new).collect(Collectors.toList());
         this.matchedEntries.addAll(entries);
     }
 
-    public boolean matchedShare() {
-        return shares == matchedEntries.stream().mapToInt(MatchedEntry::getShares).sum();
+    public int matchedShare() {
+        return matchedEntries.stream().mapToInt(MatchedEntry::getShares).sum();
+    }
+
+    public BigDecimal averagePrice() {
+        return this.matchedEntries.stream()
+                .map(MatchedEntry::totalPrice).reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(this.shares), RoundingMode.CEILING);
     }
 }

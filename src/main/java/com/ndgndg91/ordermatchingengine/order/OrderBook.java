@@ -113,9 +113,9 @@ public class OrderBook {
             case LIMIT:
                 return matchLimitOrder();
             case MARKET:
-//                return matchMarketOrder(orderType);
+                return matchMarketOrder(orderType);
             default:
-                // pass
+                // must do not happen
                 return null;
         }
     }
@@ -136,30 +136,30 @@ public class OrderBook {
                 limitAsks.poll();
                 return MatchResult.exact(bid, symbol, ask);
             } else if (d > 0) { // need more ask
-                List<OrderEntry> temp = new ArrayList<>();
-                temp.add(limitAsks.poll());
+                List<OrderEntry> tAsks = new ArrayList<>();
+                tAsks.add(limitAsks.poll());
                 while (d > 0) {
                     OrderEntry peek = limitAsks.peek();
                     if (peek == null) {
-                        limitAsks.addAll(temp);
+                        limitAsks.addAll(tAsks);
                         return null;
                     }
 
                     if (d < peek.shares()) {
                         peek.partialMatched(bid, d);
-                        temp.add(peek);
+                        tAsks.add(peek);
                         limitBids.poll();
                         d = 0;
                     } else if (d > peek.shares()) {
                         d -= peek.shares();
-                        temp.add(limitAsks.poll());
+                        tAsks.add(limitAsks.poll());
                     } else { // d == peek.shares()
-                        temp.add(limitAsks.poll());
+                        tAsks.add(limitAsks.poll());
                         break;
                     }
                 }
 
-                return MatchResult.bigBid(bid, symbol, temp);
+                return MatchResult.bigBid(bid, symbol, tAsks);
             } else { // ask has more shares
                 ask.partialMatched(bid);
                 limitBids.poll();
@@ -170,16 +170,105 @@ public class OrderBook {
         }
     }
 
-//    private MatchResult matchMarketOrder(OrderType orderType) {
-//        switch (orderType) {
-//            case BID:
-//                    return null;
-//            case ASK:
-//                return null;
-//            default:
-//                return null;
-//        }
-//    }
+    private MatchResult matchMarketOrder(OrderType orderType) {
+        switch (orderType) {
+            case BID:
+                return matchMarketBidOrder();
+            case ASK:
+                return matchMarketAskOrder();
+            default:
+                // must do not happen
+                return null;
+        }
+    }
+
+    private MatchResult matchMarketBidOrder() {
+        OrderEntry mBid = this.marketBids.peek();
+        OrderEntry lAsk = this.limitAsks.peek();
+        if (mBid == null || lAsk == null) {
+            return null;
+        }
+
+        int d = mBid.shares() - lAsk.shares();
+        if (d == 0) { // exact
+            this.marketBids.poll();
+            this.limitAsks.poll();
+            return MatchResult.exact(mBid, symbol, lAsk);
+        } else if (d > 0) { // need more ask
+            List<OrderEntry> tAsks = new ArrayList<>();
+            tAsks.add(this.limitAsks.poll());
+            while (d > 0) {
+                OrderEntry peek = this.limitAsks.peek();
+                if (peek == null) {
+                    limitAsks.addAll(tAsks);
+                    return null;
+                }
+
+                if (d < peek.shares()) {
+                    peek.partialMatched(mBid, d);
+                    tAsks.add(peek);
+                    this.marketBids.poll();
+                    d = 0;
+                } else if (d > peek.shares()) {
+                    d -= peek.shares();
+                    tAsks.add(limitAsks.poll());
+                } else { // d == peek.shares()
+                    tAsks.add(limitAsks.poll());
+                    break;
+                }
+            }
+
+            return MatchResult.bigBid(mBid, symbol, tAsks);
+        } else { // ask partial match
+            lAsk.partialMatched(mBid);
+            this.marketBids.poll();
+            return MatchResult.bigAsk(mBid, symbol, lAsk);
+        }
+    }
+
+    private MatchResult matchMarketAskOrder() {
+        OrderEntry mAsk = this.marketAsks.peek();
+        OrderEntry lBid = this.limitBids.peek();
+        if (mAsk == null || lBid == null) {
+            return null;
+        }
+
+        int d = mAsk.shares() - lBid.shares();
+        if (d == 0) {
+            this.marketAsks.poll();
+            this.limitBids.poll();
+            return MatchResult.exact(mAsk, symbol, lBid);
+        } else if (d > 0) { // need more bid
+            List<OrderEntry> tBids = new ArrayList<>();
+            tBids.add(this.limitBids.poll());
+            while (d > 0) {
+                OrderEntry peek = this.limitBids.peek();
+                if (peek == null) {
+                    limitBids.addAll(tBids);
+                    return null;
+                }
+
+                if (d < peek.shares()) {
+                    peek.partialMatched(mAsk, d);
+                    tBids.add(peek);
+                    this.marketBids.poll();
+                    d = 0;
+                } else if (d > peek.shares()) {
+                    d -= peek.shares();
+                    tBids.add(limitBids.poll());
+                } else { // d == peek.shares()
+                    tBids.add(limitBids.poll());
+                    break;
+                }
+            }
+
+            return MatchResult.bigBid(mAsk, symbol, tBids);
+        } else { // bid partial match
+            lBid.partialMatched(mAsk);
+            this.marketAsks.poll();
+            return MatchResult.bigAsk(mAsk, symbol, lBid);
+        }
+    }
 
 
 }

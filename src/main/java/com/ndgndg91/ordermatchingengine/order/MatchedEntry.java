@@ -33,4 +33,8 @@ public class MatchedEntry {
         this.price = e.getPrice();
         this.timestamp = e.getTimestamp();
     }
+
+    public BigDecimal totalPrice() {
+        return price.multiply(BigDecimal.valueOf(shares));
+    }
 }

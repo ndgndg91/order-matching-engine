@@ -1071,4 +1071,81 @@ class OrderBookTest {
         Assertions.assertThat(matchedEntries.get(1).getShares()).isEqualTo(220);
         Assertions.assertThat(matchedEntries.get(2).getShares()).isEqualTo(180);
     }
+
+    @Test
+    void realSimulation() {
+        // given
+        OrderBook orderBook = new OrderBook(Symbol.AAPL);
+
+        Order ask1 = Order.builder()
+                .orderId("03fc44bf-b268-49a8-9331-a10f4c8ec5f7")
+                .orderType(OrderType.ASK)
+                .symbol(Symbol.AAPL)
+                .shares(469)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(99334))
+                .timestamp(LocalDateTime.now())
+                .build();
+        Order bid1 = Order.builder()
+                .orderId("50fb7629-e272-4242-b8e6-415b637f63e4")
+                .orderType(OrderType.BID)
+                .symbol(Symbol.AAPL)
+                .shares(438)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(98572))
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order ask2 = Order.builder()
+                .orderId("0e044b36-f6ec-4179-8d96-f951db4e8745")
+                .orderType(OrderType.ASK)
+                .symbol(Symbol.AAPL)
+                .shares(2608)
+                .priceType(PriceType.LIMIT)
+                .price(BigDecimal.valueOf(96906))
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order bid2 = Order.builder()
+                .orderId("dec9c848-0e3f-41e6-9070-63caddcab325")
+                .orderType(OrderType.BID)
+                .symbol(Symbol.AAPL)
+                .shares(1944)
+                .priceType(PriceType.MARKET)
+                .price(BigDecimal.valueOf(97408))
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        Order bid3 = Order.builder()
+                .orderId("ea35a7d3-e48a-4993-8dbf-969394f14fae")
+                .orderType(OrderType.BID)
+                .symbol(Symbol.AAPL)
+                .shares(683)
+                .priceType(PriceType.MARKET)
+                .price(BigDecimal.valueOf(94061))
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        // when
+        orderBook.addOrder(ask1);
+        MatchResult match1 = orderBook.match(ask1.getPriceType(), ask1.getOrderType());
+        orderBook.addOrder(bid1);
+        MatchResult match2 = orderBook.match(bid1.getPriceType(), bid1.getOrderType());
+        orderBook.addOrder(ask2);
+        MatchResult match3 = orderBook.match(ask2.getPriceType(), ask2.getOrderType());
+        orderBook.addOrder(bid2);
+        MatchResult match4 = orderBook.match(bid2.getPriceType(), bid2.getOrderType());
+        orderBook.addOrder(bid3);
+        MatchResult match5 = orderBook.match(bid3.getPriceType(), bid3.getOrderType());
+
+
+        // then
+        log.info("{}", match1);
+        log.info("{}", match2);
+        log.info("{}", match3);
+        log.info("{}", match4);
+        log.info("{}", match5);
+
+
+    }
 }

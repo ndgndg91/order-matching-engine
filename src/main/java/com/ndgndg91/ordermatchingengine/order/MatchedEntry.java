@@ -25,10 +25,10 @@ public class MatchedEntry {
         this.timestamp = e.getTimestamp();
     }
 
-    public MatchedEntry(OrderEntry e) {
+    public MatchedEntry(OrderEntry e, String orderId) {
         this.orderId = e.getOrderId();
         this.orderType = e.getOrderType();
-        this.shares = e.isPartialMatched() ? e.partialShares() : e.shares();
+        this.shares = e.partialShares(orderId);
         this.priceType = e.getPriceType();
         this.price = e.getPrice();
         this.timestamp = e.getTimestamp();

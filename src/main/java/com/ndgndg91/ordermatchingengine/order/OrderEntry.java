@@ -78,8 +78,14 @@ public class OrderEntry {
         }
     }
 
-    public int partialShares() {
-        return partialMatchedEntries.stream().parallel().mapToInt(p -> p.shares).sum();
+    public int partialShares(String orderId) {
+        int sum = partialMatchedEntries.stream().parallel()
+                .filter(p -> p.orderId.equals(orderId))
+                .mapToInt(p -> p.shares).sum();
+        return sum > 0 ? sum : shares - partialMatchedEntries.stream()
+                .parallel()
+                .mapToInt(p -> p.shares)
+                .sum();
     }
 
     @RequiredArgsConstructor

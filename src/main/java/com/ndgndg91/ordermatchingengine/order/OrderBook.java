@@ -140,7 +140,7 @@ public class OrderBook {
                 tAsks.add(limitAsks.poll());
                 while (d > 0) {
                     OrderEntry peek = limitAsks.peek();
-                    if (peek == null) {
+                    if (peek == null || bid.getPrice().compareTo(peek.getPrice()) < 0) {
                         limitAsks.addAll(tAsks);
                         return null;
                     }
@@ -269,6 +269,4 @@ public class OrderBook {
             return MatchResult.bigAsk(mAsk, symbol, lBid);
         }
     }
-
-
 }

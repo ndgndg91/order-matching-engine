@@ -30,15 +30,15 @@ public class MatchResult {
         return new MatchResult(bid, symbol, ask);
     }
 
-    public static MatchResult bigBid(OrderEntry bid, Symbol symbol, List<OrderEntry> ask) {
-        return new MatchResult(bid, symbol, ask);
+    public static MatchResult bigBid(OrderEntry bid, Symbol symbol, List<OrderEntry> asks) {
+        return new MatchResult(bid, symbol, asks);
     }
 
     private MatchResult(OrderEntry bid, Symbol symbol, OrderEntry ask) {
         this.symbol = symbol;
         this.orderId = bid.getOrderId();
         this.orderType = bid.getOrderType();
-        this.shares = bid.shares();
+        this.shares = bid.isPartialMatched() ? bid.shares() : bid.getShares();
         this.priceType = bid.getPriceType();
         this.price = bid.getPrice();
         this.timestamp = bid.getTimestamp();
@@ -49,11 +49,11 @@ public class MatchResult {
         this.symbol = symbol;
         this.orderId = bid.getOrderId();
         this.orderType = bid.getOrderType();
-        this.shares = bid.shares();
+        this.shares = bid.isPartialMatched() ? bid.shares() : bid.getShares();
         this.priceType = bid.getPriceType();
         this.price = bid.getPrice();
         this.timestamp = bid.getTimestamp();
-        List<MatchedEntry> entries = asks.stream().map(MatchedEntry::new).collect(Collectors.toList());
+        List<MatchedEntry> entries = asks.stream().map(a -> new MatchedEntry(a, bid.getOrderId())).collect(Collectors.toList());
         this.matchedEntries.addAll(entries);
     }
 

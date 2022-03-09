@@ -1138,6 +1138,8 @@ class OrderBookTest {
         orderBook.addOrder(bid3);
         MatchResult match5 = orderBook.match(bid3.getPriceType(), bid3.getOrderType());
 
+        OrderEntry leftAsk = orderBook.asksPoll().orElseThrow();
+
 
         // then
         log.info("{}", match1);
@@ -1145,7 +1147,23 @@ class OrderBookTest {
         log.info("{}", match3);
         log.info("{}", match4);
         log.info("{}", match5);
+        log.info("{}", leftAsk);
+        Assertions.assertThat(match1).isNull();
+        Assertions.assertThat(match2).isNull();
+        Assertions.assertThat(match3).isNotNull();
+        Assertions.assertThat(match4).isNotNull();
+        Assertions.assertThat(match5).isNotNull();
 
+        Assertions.assertThat(match3.getMatchedEntries()).hasSize(1);
+        Assertions.assertThat(match4.getMatchedEntries()).hasSize(1);
+        Assertions.assertThat(match5.getMatchedEntries()).hasSize(2);
 
+        Assertions.assertThat(match3.getMatchedEntries().get(0).getOrderId()).isEqualTo(ask2.getOrderId());
+        Assertions.assertThat(match4.getMatchedEntries().get(0).getOrderId()).isEqualTo(ask2.getOrderId());
+        Assertions.assertThat(match5.getMatchedEntries().get(0).getOrderId()).isEqualTo(ask2.getOrderId());
+        Assertions.assertThat(match5.getMatchedEntries().get(1).getOrderId()).isEqualTo(ask1.getOrderId());
+
+        Assertions.assertThat(leftAsk.getOrderId()).isEqualTo(ask1.getOrderId());
+        Assertions.assertThat(leftAsk.shares()).isEqualTo(12);
     }
 }

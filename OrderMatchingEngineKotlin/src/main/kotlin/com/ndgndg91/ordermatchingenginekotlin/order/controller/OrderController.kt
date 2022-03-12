@@ -1,12 +1,15 @@
 package com.ndgndg91.ordermatchingenginekotlin.order.controller
 
 import com.ndgndg91.ordermatchingenginekotlin.global.ApiResponse
+import com.ndgndg91.ordermatchingenginekotlin.global.OrderServiceException
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.AddOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.CancelOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.ModifyOrderRequest
+import com.ndgndg91.ordermatchingenginekotlin.order.dto.response.OrderEntryResponse
 import com.ndgndg91.ordermatchingenginekotlin.order.service.Engine
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
@@ -46,9 +49,17 @@ class OrderController(private val engine: Engine) {
         @PathVariable symbol: String,
         @PathVariable orderType: String,
         @PathVariable orderId: String
-    ) :ResponseEntity<ApiResponse<Unit>> {
-        val e = engine.find(symbol, orderType, orderId)
-        return ResponseEntity.ok().build();
+    ) :ResponseEntity<ApiResponse<OrderEntryResponse>> {
+        val result = kotlin.runCatching { engine.find(symbol, orderType, orderId)!! }
+        if (result.isFailure) {
+            throw OrderServiceException(
+                null,
+                HttpStatus.NOT_FOUND.value(),
+                String.format("Not Found symbol: % order type : %s, order id : %s", symbol, orderType, orderId)
+            )
+        }
+        val e = result.getOrThrow()
+        return ResponseEntity.ok(ApiResponse(OrderEntryResponse(e)))
     }
 
 //    @GetMapping("/apis/orders/bids/{symbol}/poll")

@@ -5,7 +5,6 @@ import java.time.LocalDateTime
 
 data class OrderEntry(
     val order: Order,
-
 ) {
     val orderId: String = order.orderId
     val orderType: OrderType = order.orderType

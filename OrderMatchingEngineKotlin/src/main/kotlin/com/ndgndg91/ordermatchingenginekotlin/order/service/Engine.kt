@@ -4,9 +4,12 @@ import com.ndgndg91.ordermatchingenginekotlin.order.*
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.AddOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.CancelOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.ModifyOrderRequest
+import com.ndgndg91.ordermatchingenginekotlin.order.event.OrderMatchTriggerEvent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -28,6 +31,7 @@ class Engine(
             .build()
         log.info("add order : {}", order)
         orderBooks.addOrder(order)
+        publisher.publishEvent(OrderMatchTriggerEvent(order.symbol, order.priceType, order.orderType))
         return order
     }
 
@@ -43,6 +47,7 @@ class Engine(
             .build()
         log.info("modify order : {}", order)
         orderBooks.modifyOrder(order)
+        publisher.publishEvent(OrderMatchTriggerEvent(order.symbol, order.priceType, order.orderType))
     }
 
     fun cancelOrder(request: CancelOrderRequest) {
@@ -53,10 +58,17 @@ class Engine(
             .symbol(Symbol.valueOf(request.symbol!!))
             .build()
         log.info("cancel order : {}", order)
+        publisher.publishEvent(OrderMatchTriggerEvent(order.symbol, order.priceType, order.orderType))
         orderBooks.cancelOrder(order)
     }
 
     fun find(symbol: String, orderType: String, orderId: String): OrderEntry? {
         return orderBooks.find(Symbol.valueOf(symbol), OrderType.valueOf(orderType), orderId)
+    }
+
+    @Async
+    @EventListener
+    fun match(event: OrderMatchTriggerEvent) {
+        TODO("engine match logic not yet")
     }
 }

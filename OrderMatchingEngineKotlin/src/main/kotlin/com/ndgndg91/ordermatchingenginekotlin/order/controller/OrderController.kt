@@ -7,6 +7,8 @@ import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.CancelOrderReque
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.ModifyOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.response.OrderEntryResponse
 import com.ndgndg91.ordermatchingenginekotlin.order.service.Engine
+import com.ndgndg91.ordermatchingenginekotlin.order.validation.OrderTypeValue
+import com.ndgndg91.ordermatchingenginekotlin.order.validation.SymbolValue
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -15,6 +17,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 import javax.validation.Valid
+import javax.validation.constraints.NotNull
 
 @Validated
 @RestController
@@ -23,7 +26,7 @@ class OrderController(private val engine: Engine) {
     private val log: Logger = LoggerFactory.getLogger(OrderController::class.java)
 
     @PostMapping("/apis/orders")
-    fun newOrder(@RequestBody @Valid request: AddOrderRequest): ResponseEntity<ApiResponse<Unit>> {
+    fun newOrder(@Valid @RequestBody  request: AddOrderRequest): ResponseEntity<ApiResponse<Unit>> {
         log.info("{}", request)
         val order = engine.addOrder(request)
         return ResponseEntity
@@ -32,23 +35,23 @@ class OrderController(private val engine: Engine) {
     }
 
     @PatchMapping("/apis/orders")
-    fun modifyOrder(@RequestBody @Valid request: ModifyOrderRequest): ResponseEntity<ApiResponse<Unit>> {
+    fun modifyOrder(@Valid @RequestBody request: ModifyOrderRequest): ResponseEntity<ApiResponse<Unit>> {
         log.info("{}", request)
         engine.modifyOrder(request)
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/apis/orders")
-    fun cancelOrder(@RequestBody @Valid request: CancelOrderRequest): ResponseEntity<ApiResponse<Unit>> {
+    fun cancelOrder(@Valid @RequestBody request: CancelOrderRequest): ResponseEntity<ApiResponse<Unit>> {
         engine.cancelOrder(request)
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/apis/orders/{symbol}/{orderType}/{orderId}")
     fun findOrder(
-        @PathVariable symbol: String,
-        @PathVariable orderType: String,
-        @PathVariable orderId: String
+        @PathVariable @SymbolValue symbol: String,
+        @PathVariable @OrderTypeValue orderType: String,
+        @PathVariable @NotNull(message = "order id is required") orderId: String
     ) :ResponseEntity<ApiResponse<OrderEntryResponse>> {
         val result = kotlin.runCatching { engine.find(symbol, orderType, orderId)!! }
         if (result.isFailure) {

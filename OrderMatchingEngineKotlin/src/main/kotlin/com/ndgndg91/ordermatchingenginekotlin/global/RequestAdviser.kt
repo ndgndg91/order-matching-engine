@@ -38,8 +38,8 @@ class RequestAdviser {
     fun constraintViolationException(e: ConstraintViolationException): ResponseEntity<ApiError> {
         val message = e.constraintViolations
             .asSequence()
-            .map { it.message }
-            .toString()
+            .map { it.messageTemplate }
+            .joinToString("\t")
 
         log.info(message)
         return ResponseEntity

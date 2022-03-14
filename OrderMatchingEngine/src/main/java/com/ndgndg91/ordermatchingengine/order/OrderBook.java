@@ -5,35 +5,33 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 @Slf4j
 public class OrderBook {
     private final Symbol symbol;
-    // todo id 기준으로 중복 불가능하게 하기
-    private final Queue<OrderEntry> limitBids;
-    private final Queue<OrderEntry> limitAsks;
-    private final Queue<OrderEntry> marketBids;
-    private final Queue<OrderEntry> marketAsks;
+    private final SortedSet<OrderEntry> limitBids;
+    private final SortedSet<OrderEntry> limitAsks;
+    private final SortedSet<OrderEntry> marketBids;
+    private final SortedSet<OrderEntry> marketAsks;
 
     public OrderBook(Symbol symbol) {
         this.symbol = symbol;
-        this.limitBids = new PriorityBlockingQueue<>(100, (e1, e2) -> {
+        this.limitBids = new ConcurrentSkipListSet<>((e1, e2) -> {
             int c = e2.getPrice().compareTo(e1.getPrice());
             if (c == 0) return e1.getTimestamp().compareTo(e2.getTimestamp());
             return c;
         });
-        this.limitAsks = new PriorityBlockingQueue<>(100, (e1, e2) -> {
+        this.limitAsks = new ConcurrentSkipListSet<>((e1, e2) -> {
             int c = e1.getPrice().compareTo(e2.getPrice());
             if (c == 0) return e1.getTimestamp().compareTo(e2.getTimestamp());
             return c;
         });
-        this.marketBids = new LinkedBlockingQueue<>();
-        this.marketAsks = new LinkedBlockingQueue<>();
+        this.marketBids = new ConcurrentSkipListSet<>(Comparator.comparing(OrderEntry::getTimestamp));
+        this.marketAsks = new ConcurrentSkipListSet<>(Comparator.comparing(OrderEntry::getTimestamp));
     }
 
-    private Queue<OrderEntry> selectQueue(PriceType priceType, OrderType orderType) {
+    private SortedSet<OrderEntry> selectQueue(PriceType priceType, OrderType orderType) {
         switch (priceType) {
             case MARKET:
                 return marketQueue(orderType);
@@ -44,7 +42,7 @@ public class OrderBook {
         }
     }
 
-    private Queue<OrderEntry> limitQueue(OrderType orderType) {
+    private SortedSet<OrderEntry> limitQueue(OrderType orderType) {
         switch (orderType) {
             case BID:
                 return this.limitBids;
@@ -55,7 +53,7 @@ public class OrderBook {
         }
     }
 
-    private Queue<OrderEntry> marketQueue(OrderType orderType) {
+    private SortedSet<OrderEntry> marketQueue(OrderType orderType) {
         switch (orderType) {
             case BID:
                 return this.marketBids;
@@ -67,12 +65,18 @@ public class OrderBook {
     }
 
     public void addOrder(Order order) {
-        OrderEntry e = new OrderEntry(order);
-        selectQueue(order.getPriceType(), order.getOrderType()).add(e);
+        SortedSet<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
+        if (queue.stream().parallel().anyMatch(e -> e.getOrderId().equals(order.getOrderId()))) {
+            log.info("already exists, failed to add {}", order);
+        } else {
+            OrderEntry e = new OrderEntry(order);
+            queue.add(e);
+            log.info("success to add {}", order);
+        }
     }
 
     public void modifyOrder(Order order) {
-        Queue<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
+        SortedSet<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
         OrderEntry oe = queue.stream()
                 .parallel()
                 .filter(e -> e.getOrderId().equals(order.getOrderId()))
@@ -83,7 +87,7 @@ public class OrderBook {
     }
 
     public void cancelOrder(Order order) {
-        Queue<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
+        SortedSet<OrderEntry> queue = selectQueue(order.getPriceType(), order.getOrderType());
 
         OrderEntry target = queue.stream()
                 .parallel()
@@ -95,18 +99,18 @@ public class OrderBook {
 
     public Optional<OrderEntry> bidsPoll() {
         if (!this.marketBids.isEmpty()) {
-            return Optional.ofNullable(this.marketBids.poll());
+            return Optional.ofNullable(poll(this.marketBids));
         }
 
-        return Optional.ofNullable(this.limitBids.poll());
+        return Optional.ofNullable(poll(this.limitBids));
     }
 
     public Optional<OrderEntry> asksPoll() {
         if (!this.marketAsks.isEmpty()) {
-            return Optional.ofNullable(this.marketAsks.poll());
+            return Optional.ofNullable(poll(this.marketAsks));
         }
 
-        return Optional.ofNullable(this.limitAsks.poll());
+        return Optional.ofNullable(poll(this.limitAsks));
     }
 
     public MatchResult match(PriceType priceType, OrderType orderType) {
@@ -122,8 +126,8 @@ public class OrderBook {
     }
 
     private MatchResult matchLimitOrder() {
-        OrderEntry bid = limitBids.peek();
-        OrderEntry ask = limitAsks.peek();
+        OrderEntry bid = peek(this.limitBids);
+        OrderEntry ask = peek(this.limitAsks);
         if (ask == null || bid == null) {
             return null;
         }
@@ -133,14 +137,14 @@ public class OrderBook {
         // matched
         if (c >= 0) {
             if (d == 0) { // totally matched
-                limitBids.poll();
-                limitAsks.poll();
+                poll(this.limitBids);
+                poll(this.limitAsks);
                 return MatchResult.exact(bid, symbol, ask);
             } else if (d > 0) { // need more ask
                 List<OrderEntry> tAsks = new ArrayList<>();
-                tAsks.add(limitAsks.poll());
+                tAsks.add(poll(this.limitAsks));
                 while (d > 0) {
-                    OrderEntry peek = limitAsks.peek();
+                    OrderEntry peek = peek(this.limitAsks);
                     if (peek == null || bid.getPrice().compareTo(peek.getPrice()) < 0) {
                         limitAsks.addAll(tAsks);
                         return null;
@@ -149,13 +153,13 @@ public class OrderBook {
                     if (d < peek.shares()) {
                         peek.partialMatched(bid, d);
                         tAsks.add(peek);
-                        limitBids.poll();
+                        poll(this.limitBids);
                         d = 0;
                     } else if (d > peek.shares()) {
                         d -= peek.shares();
-                        tAsks.add(limitAsks.poll());
+                        tAsks.add(poll(this.limitAsks));
                     } else { // d == peek.shares()
-                        tAsks.add(limitAsks.poll());
+                        tAsks.add(poll(this.limitAsks));
                         break;
                     }
                 }
@@ -163,7 +167,7 @@ public class OrderBook {
                 return MatchResult.bigBid(bid, symbol, tAsks);
             } else { // ask has more shares
                 ask.partialMatched(bid);
-                limitBids.poll();
+                poll(this.limitBids);
                 return MatchResult.bigAsk(bid, symbol, ask);
             }
         } else { // not matched
@@ -184,22 +188,22 @@ public class OrderBook {
     }
 
     private MatchResult matchMarketBidOrder() {
-        OrderEntry mBid = this.marketBids.peek();
-        OrderEntry lAsk = this.limitAsks.peek();
+        OrderEntry mBid = peek(this.marketBids);
+        OrderEntry lAsk = peek(this.limitAsks);
         if (mBid == null || lAsk == null) {
             return null;
         }
 
         int d = mBid.shares() - lAsk.shares();
         if (d == 0) { // exact
-            this.marketBids.poll();
-            this.limitAsks.poll();
+            poll(this.marketBids);
+            poll(this.limitAsks);
             return MatchResult.exact(mBid, symbol, lAsk);
         } else if (d > 0) { // need more ask
             List<OrderEntry> tAsks = new ArrayList<>();
-            tAsks.add(this.limitAsks.poll());
+            tAsks.add(poll(this.limitAsks));
             while (d > 0) {
-                OrderEntry peek = this.limitAsks.peek();
+                OrderEntry peek = peek(this.limitAsks);
                 if (peek == null) {
                     limitAsks.addAll(tAsks);
                     return null;
@@ -208,13 +212,13 @@ public class OrderBook {
                 if (d < peek.shares()) {
                     peek.partialMatched(mBid, d);
                     tAsks.add(peek);
-                    this.marketBids.poll();
+                    poll(this.marketBids);
                     d = 0;
                 } else if (d > peek.shares()) {
                     d -= peek.shares();
-                    tAsks.add(limitAsks.poll());
+                    tAsks.add(poll(this.limitAsks));
                 } else { // d == peek.shares()
-                    tAsks.add(limitAsks.poll());
+                    tAsks.add(poll(this.limitAsks));
                     break;
                 }
             }
@@ -222,28 +226,28 @@ public class OrderBook {
             return MatchResult.bigBid(mBid, symbol, tAsks);
         } else { // ask partial match
             lAsk.partialMatched(mBid);
-            this.marketBids.poll();
+            poll(this.marketBids);
             return MatchResult.bigAsk(mBid, symbol, lAsk);
         }
     }
 
     private MatchResult matchMarketAskOrder() {
-        OrderEntry mAsk = this.marketAsks.peek();
-        OrderEntry lBid = this.limitBids.peek();
+        OrderEntry mAsk = peek(this.marketAsks);
+        OrderEntry lBid = peek(this.limitBids);
         if (mAsk == null || lBid == null) {
             return null;
         }
 
         int d = mAsk.shares() - lBid.shares();
         if (d == 0) {
-            this.marketAsks.poll();
-            this.limitBids.poll();
+            poll(this.marketAsks);
+            poll(this.limitBids);
             return MatchResult.exact(mAsk, symbol, lBid);
         } else if (d > 0) { // need more bid
             List<OrderEntry> tBids = new ArrayList<>();
-            tBids.add(this.limitBids.poll());
+            tBids.add(poll(this.limitBids));
             while (d > 0) {
-                OrderEntry peek = this.limitBids.peek();
+                OrderEntry peek = peek(this.limitBids);
                 if (peek == null) {
                     limitBids.addAll(tBids);
                     return null;
@@ -252,13 +256,13 @@ public class OrderBook {
                 if (d < peek.shares()) {
                     peek.partialMatched(mAsk, d);
                     tBids.add(peek);
-                    this.marketBids.poll();
+                    poll(this.marketBids);
                     d = 0;
                 } else if (d > peek.shares()) {
                     d -= peek.shares();
-                    tBids.add(limitBids.poll());
+                    tBids.add(poll(this.limitBids));
                 } else { // d == peek.shares()
-                    tBids.add(limitBids.poll());
+                    tBids.add(poll(this.limitBids));
                     break;
                 }
             }
@@ -266,8 +270,26 @@ public class OrderBook {
             return MatchResult.bigBid(mAsk, symbol, tBids);
         } else { // bid partial match
             lBid.partialMatched(mAsk);
-            this.marketAsks.poll();
+            poll(this.marketAsks);
             return MatchResult.bigAsk(mAsk, symbol, lBid);
+        }
+    }
+
+    private OrderEntry peek(SortedSet<OrderEntry> queue) {
+        try {
+            return queue.first();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    private OrderEntry poll(SortedSet<OrderEntry> queue) {
+        try {
+            OrderEntry first = queue.first();
+            queue.remove(first);
+            return first;
+        } catch (NoSuchElementException e) {
+            return null;
         }
     }
 }

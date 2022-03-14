@@ -11,6 +11,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 @Slf4j
 public class OrderBook {
     private final Symbol symbol;
+    // todo id 기준으로 중복 불가능하게 하기
     private final Queue<OrderEntry> limitBids;
     private final Queue<OrderEntry> limitAsks;
     private final Queue<OrderEntry> marketBids;

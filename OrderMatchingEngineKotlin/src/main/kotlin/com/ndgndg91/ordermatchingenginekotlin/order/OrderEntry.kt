@@ -3,8 +3,8 @@ package com.ndgndg91.ordermatchingenginekotlin.order
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-data class OrderEntry(
-    val order: Order,
+class OrderEntry(
+    order: Order,
 ) {
     val orderId: String = order.orderId
     val orderType: OrderType = order.orderType
@@ -71,4 +71,10 @@ data class OrderEntry(
     override fun hashCode(): Int {
         return orderId.hashCode()
     }
+
+    override fun toString(): String {
+        return "OrderEntry(orderId='$orderId', orderType=$orderType, shares=$shares, priceType=$priceType, price=$price, timestamp=$timestamp, partialMatched=$partialMatched, partialMatchedEntries=$partialMatchedEntries)"
+    }
+
+
 }

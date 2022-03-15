@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-class OrderBooks {
+abstract class OrderBooks {
     companion object {
         const val MESSAGE = "Not Found Symbol : %s \t OrderId : %s"
     }
@@ -59,5 +59,10 @@ class OrderBooks {
         }
 
         return findResult.getOrNull()
+    }
+
+    fun match(symbol: Symbol, priceType: PriceType, orderType: OrderType): MatchResult? {
+        val orderBook = m[symbol]
+        return orderBook!!.match(priceType, orderType)
     }
 }

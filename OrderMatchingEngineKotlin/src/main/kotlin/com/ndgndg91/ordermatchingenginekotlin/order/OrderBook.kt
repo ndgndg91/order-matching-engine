@@ -128,4 +128,30 @@ class OrderBook(private val symbol: Symbol) {
         }
     }
 
+    fun match(priceType: PriceType, orderType: OrderType): MatchResult {
+        return when(priceType) {
+            PriceType.LIMIT -> matchLimitOrder()
+            PriceType.MARKET -> matchMarketOrder(orderType)
+        }
+    }
+
+    fun matchLimitOrder(): MatchResult {
+        TODO("Not yet implemented")
+    }
+
+    fun matchMarketOrder(orderType: OrderType): MatchResult {
+        return when(orderType) {
+            OrderType.BID -> matchMarketBidOrder()
+            OrderType.ASK -> matchMarketAskOrder()
+        }
+    }
+
+    private fun matchMarketAskOrder(): MatchResult {
+        TODO("Not yet implemented")
+    }
+
+    private fun matchMarketBidOrder(): MatchResult {
+        TODO("Not yet implemented")
+    }
+
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-abstract class OrderBooks {
+class OrderBooks {
     companion object {
         const val MESSAGE = "Not Found Symbol : %s \t OrderId : %s"
     }

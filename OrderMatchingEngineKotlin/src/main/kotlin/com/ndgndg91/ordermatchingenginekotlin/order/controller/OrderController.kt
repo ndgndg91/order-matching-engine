@@ -11,6 +11,7 @@ import com.ndgndg91.ordermatchingenginekotlin.order.validation.OrderTypeValue
 import com.ndgndg91.ordermatchingenginekotlin.order.validation.SymbolValue
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -21,7 +22,7 @@ import javax.validation.constraints.NotNull
 
 @Validated
 @RestController
-class OrderController(private val engine: Engine) {
+class OrderController(private val engine: Engine, private val redisTemplate: RedisTemplate<String, String>) {
 
     private val log: Logger = LoggerFactory.getLogger(OrderController::class.java)
 
@@ -63,6 +64,26 @@ class OrderController(private val engine: Engine) {
         }
         val e = result.getOrThrow()
         return ResponseEntity.ok(ApiResponse(OrderEntryResponse(e)))
+    }
+
+    @PostMapping("/apis/redis/{key}/{value}")
+    fun redisSet(
+        @PathVariable key: String,
+        @PathVariable value: String
+    ): ResponseEntity<ApiResponse<Unit>> {
+        redisTemplate.opsForValue().set(key, value)
+        return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/apis/redis/{key}")
+    fun redisGet(
+        @PathVariable key: String
+    ): ResponseEntity<ApiResponse<String>> {
+        val maybe = kotlin.runCatching { redisTemplate.opsForValue().get(key)!! }
+        if (maybe.isFailure) {
+            throw OrderServiceException(null, HttpStatus.NOT_FOUND.value(), String.format("Not Found value by %s", key))
+        }
+        return ResponseEntity.ok(ApiResponse(maybe.getOrThrow()))
     }
 
 //    @GetMapping("/apis/orders/bids/{symbol}/poll")

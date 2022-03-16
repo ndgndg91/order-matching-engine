@@ -9,6 +9,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
@@ -16,6 +17,7 @@ import java.util.*
 @Service
 class Engine(
     private val orderBooks: OrderBooks,
+    private val redisTemplate: RedisTemplate<String, String>,
     private val publisher: ApplicationEventPublisher
 ) {
     private val log: Logger = LoggerFactory.getLogger(Engine::class.java)
@@ -69,6 +71,7 @@ class Engine(
     @Async
     @EventListener
     fun match(event: OrderMatchTriggerEvent) {
+//        redisTemplate.opsForValue().set(event.symbol.name, "")
         TODO("engine match logic not yet")
     }
 }

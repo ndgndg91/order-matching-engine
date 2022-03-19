@@ -32,5 +32,10 @@ class MatchedEntry {
     fun totalPrice(): BigDecimal {
         return this.price.multiply(BigDecimal(this.shares))
     }
+
+    override fun toString(): String {
+        return "MatchedEntry(orderId='$orderId', orderType=$orderType, shares=$shares, priceType=$priceType, price=$price, timestamp=$timestamp)"
+    }
+
 }
 

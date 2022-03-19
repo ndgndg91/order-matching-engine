@@ -57,4 +57,10 @@ class MatchResult {
     fun averagePrice(): BigDecimal = this.matchedEntries.stream()
         .map { it.totalPrice() }.reduce(BigDecimal.ZERO, BigDecimal::add)
         .divide(BigDecimal(this.shares), RoundingMode.CEILING)
+
+    override fun toString(): String {
+        return "MatchResult(symbol=$symbol, orderId='$orderId', orderType=$orderType, shares=$shares, priceType=$priceType, price=$price, timestamp=$timestamp, matchedEntries=$matchedEntries)"
+    }
+
+
 }

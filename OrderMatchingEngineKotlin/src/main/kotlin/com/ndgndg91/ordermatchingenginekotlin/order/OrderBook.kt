@@ -4,7 +4,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentSkipListSet
+import kotlin.NoSuchElementException
 import kotlin.collections.ArrayList
+
+fun SortedSet<OrderEntry>.firstByOrderId(id: String): OrderEntry? = try {
+    this.first { it.orderId == id }
+} catch (e: NoSuchElementException) {
+    null
+}
+
 
 class OrderBook(private val symbol: Symbol) {
     private val log: Logger = LoggerFactory.getLogger(OrderBook::class.java)
@@ -75,54 +83,33 @@ class OrderBook(private val symbol: Symbol) {
 
     fun find(orderType: OrderType, orderId: String): OrderEntry? = when (orderType) {
         OrderType.ASK -> {
-            val inLimitAsks = kotlin.runCatching { this.limitAsks.first { it.orderId == orderId } }
-            if (inLimitAsks.isSuccess) {
-                inLimitAsks.getOrThrow()
-            }
-
-            val inMarketAsks = kotlin.runCatching { this.marketAsks.first { it.orderId == orderId } }
-            if (inMarketAsks.isSuccess) {
-                inMarketAsks.getOrThrow()
-            }
-
-            null
+            this.limitAsks.firstByOrderId(orderId)?: this.marketAsks.firstByOrderId(orderId)
         }
         OrderType.BID -> {
-            val inLimitBids = kotlin.runCatching { this.limitBids.first { it.orderId == orderId } }
-            if (inLimitBids.isSuccess) {
-                inLimitBids.getOrThrow()
-            }
-
-
-            val inMarketBids = kotlin.runCatching { this.marketBids.first { it.orderId == orderId } }
-            if (inMarketBids.isSuccess) {
-                inMarketBids.getOrThrow()
-            }
-
-            null
+            this.limitBids.firstByOrderId(orderId)?: this.marketBids.firstByOrderId(orderId)
         }
     }
 
 
-    fun bidsPoll(): OrderEntry? = if (!this.marketBids.isEmpty()) {
-        val first = this.marketBids.first()
-        this.marketBids.remove(first)
-        first
-    } else {
-        val first = this.limitBids.first()
-        this.limitBids.remove(first)
-        first
+    fun bidsPoll(): OrderEntry? = try {
+        if (!this.marketBids.isEmpty()) {
+            poll(this.marketBids)
+        } else {
+            poll(this.limitBids)
+        }
+    } catch (e: NoSuchElementException) {
+        null
     }
 
 
-    fun asksPoll(): OrderEntry? = if (!this.marketAsks.isEmpty()) {
-        val first = this.marketAsks.first()
-        this.marketAsks.remove(first)
-        first
-    } else {
-        val first = this.limitAsks.first()
-        this.limitAsks.remove(first)
-        first
+    fun asksPoll(): OrderEntry? = try {
+        if (!this.marketAsks.isEmpty()) {
+            poll(this.marketAsks)
+        } else {
+            poll(this.limitAsks)
+        }
+    } catch (e: NoSuchElementException) {
+        null
     }
 
     fun match(priceType: PriceType, orderType: OrderType): MatchResult? {

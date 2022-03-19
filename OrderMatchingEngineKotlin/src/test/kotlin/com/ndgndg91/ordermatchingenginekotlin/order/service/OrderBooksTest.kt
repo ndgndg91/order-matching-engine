@@ -68,7 +68,7 @@ internal class OrderBooksTest {
         Assertions.assertThat(bidsPoll2!!.orderId).isEqualTo(bid2.orderId)
         Assertions.assertThat(bidsPoll3!!.orderId).isEqualTo(bid4.orderId)
         Assertions.assertThat(bidsPoll4!!.orderId).isEqualTo(bid1.orderId)
-        Assertions.assertThatThrownBy { orderBook.bidsPoll() }
+        Assertions.assertThat(orderBook.bidsPoll()).isNull()
     }
 
     @Test
@@ -126,7 +126,7 @@ internal class OrderBooksTest {
         Assertions.assertThat(asksPoll2!!.orderId).isEqualTo(ask1.orderId)
         Assertions.assertThat(asksPoll3!!.orderId).isEqualTo(ask4.orderId)
         Assertions.assertThat(asksPoll4!!.orderId).isEqualTo(ask2.orderId)
-        Assertions.assertThatThrownBy { orderBook.asksPoll() }
+        Assertions.assertThat(orderBook.asksPoll()).isNull()
     }
 
     @Test
@@ -163,6 +163,7 @@ internal class OrderBooksTest {
         Assertions.assertThat(asksPoll!!.orderId).isEqualTo(id)
         Assertions.assertThat(asksPoll.price).isEqualTo(BigDecimal(15_000))
         Assertions.assertThat(asksPoll.shares).isEqualTo(200)
+        Assertions.assertThat(orderBook.asksPoll()).isNull()
     }
 
     @Test
@@ -170,9 +171,36 @@ internal class OrderBooksTest {
         // given
         val orderBook = OrderBook(Symbol.AAPL)
 
+        val id = UUID.randomUUID().toString()
+        val order = Order.Builder()
+            .orderId(id)
+            .orderType(OrderType.ASK)
+            .price(BigDecimal(10_000))
+            .priceType(PriceType.MARKET)
+            .shares(100)
+            .symbol(Symbol.AAPL)
+            .build()
+
         // when
+        orderBook.addOrder(order)
+
+        val mOrder = Order.Builder()
+            .orderId(id)
+            .orderType(OrderType.ASK)
+            .price(BigDecimal(20_000))
+            .priceType(PriceType.MARKET)
+            .shares(500)
+            .symbol(Symbol.AAPL)
+            .build()
+
+        orderBook.modifyOrder(mOrder)
+        val asksPoll = orderBook.asksPoll()
 
         // then
+        Assertions.assertThat(asksPoll!!.orderId).isEqualTo(id)
+        Assertions.assertThat(asksPoll.price).isEqualTo(BigDecimal(20_000))
+        Assertions.assertThat(asksPoll.shares).isEqualTo(500)
+        Assertions.assertThat(orderBook.asksPoll()).isNull()
     }
 
     @Test
@@ -180,9 +208,36 @@ internal class OrderBooksTest {
         // given
         val orderBook = OrderBook(Symbol.AAPL)
 
+        val id = UUID.randomUUID().toString()
+        val order = Order.Builder()
+            .orderId(id)
+            .orderType(OrderType.BID)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(10_000))
+            .shares(100)
+            .symbol(Symbol.AAPL)
+            .build()
+
         // when
+        orderBook.addOrder(order)
+
+        val mOrder = Order.Builder()
+            .orderId(id)
+            .orderType(OrderType.BID)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(25_000))
+            .shares(300)
+            .symbol(Symbol.AAPL)
+            .build()
+
+        orderBook.modifyOrder(mOrder)
+        val bidsPoll = orderBook.bidsPoll()
 
         // then
+        Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(id)
+        Assertions.assertThat(bidsPoll.price).isEqualTo(BigDecimal(25_000))
+        Assertions.assertThat(bidsPoll.shares()).isEqualTo(300)
+        Assertions.assertThat(orderBook.bidsPoll()).isNull()
     }
 
     @Test
@@ -190,8 +245,115 @@ internal class OrderBooksTest {
         // given
         val orderBook = OrderBook(Symbol.AAPL)
 
+        val id = UUID.randomUUID().toString()
+        val order = Order.Builder()
+            .orderId(id)
+            .orderType(OrderType.BID)
+            .priceType(PriceType.MARKET)
+            .price(BigDecimal(10_000))
+            .shares(100)
+            .symbol(Symbol.AAPL)
+            .build()
+
         // when
+        orderBook.addOrder(order)
+
+        val mOrder = Order.Builder()
+            .orderId(id)
+            .orderType(OrderType.BID)
+            .priceType(PriceType.MARKET)
+            .price(BigDecimal(25_000))
+            .shares(300)
+            .symbol(Symbol.AAPL)
+            .build()
+
+        orderBook.modifyOrder(mOrder)
+        val bidsPoll = orderBook.bidsPoll()
 
         // then
+        Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(id)
+        Assertions.assertThat(bidsPoll.price).isEqualTo(BigDecimal(25_000))
+        Assertions.assertThat(bidsPoll.shares()).isEqualTo(300)
+        Assertions.assertThat(orderBook.bidsPoll()).isNull()
+    }
+
+    @Test
+    fun cancelAsks() {
+
+    }
+
+    @Test
+    fun cancelBids() {
+
+    }
+
+    @Test
+    fun emptyMatch() {
+
+    }
+
+    @Test
+    fun limitExactMatch() {
+
+    }
+
+    @Test
+    fun bigAskLimitMatch() {
+
+    }
+
+    @Test
+    fun bigBidLimitMatch() {
+
+    }
+
+    @Test
+    fun limitOrderSimulation_1() {
+
+    }
+
+    @Test
+    fun limitOrderSimulation_2() {
+
+    }
+
+    @Test
+    fun bidMarketEmptyMatch() {
+
+    }
+
+    @Test
+    fun bidMarketExactMatch() {
+
+    }
+
+    @Test
+    fun bidMarketBigBidMatch() {
+
+    }
+
+    @Test
+    fun bidMarketBigAskMatch() {
+
+    }
+
+    @Test
+    fun askMarketEmptyMatch() {
+
+    }
+
+    @Test
+    fun askMarketExactMatch() {
+
+    }
+
+    @Test
+    fun askMarketBigBidMatch() {
+
+    }
+
+    @Test
+    fun askMarketBigAskMatch() {
+
     }
 }

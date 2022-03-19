@@ -1,7 +1,9 @@
 package com.ndgndg91.ordermatchingenginekotlin.order
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
+import kotlin.streams.toList
 
 class MatchResult {
     val symbol: Symbol
@@ -10,12 +12,24 @@ class MatchResult {
     val shares: Int
     val priceType: PriceType
     val price: BigDecimal
-    val timestamp: LocalDateTime
+    private val timestamp: LocalDateTime
     var matchedEntries: List<MatchedEntry> = mutableListOf()
 
-    // TODO: exact, bigAsk, bigBid 정적 팩토리 메서드
+    companion object {
+        fun exact(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult {
+            return MatchResult(bid, symbol, ask)
+        }
 
-    constructor(bid: OrderEntry, symbol: Symbol, ask: OrderEntry) {
+        fun bigBid(bid: OrderEntry, symbol: Symbol, tAsks: List<OrderEntry>): MatchResult {
+            return MatchResult(bid, symbol, tAsks)
+        }
+
+        fun bigAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult {
+            return MatchResult(bid, symbol, ask)
+        }
+    }
+
+    private constructor(bid: OrderEntry, symbol: Symbol, ask: OrderEntry) {
         this.symbol = symbol
         this.orderId = bid.orderId
         this.orderType = bid.orderType
@@ -38,5 +52,9 @@ class MatchResult {
         this.matchedEntries = this.matchedEntries.plus(entries)
     }
 
-    // TODO: matchedShare() function, averagePrice function
+    fun matchedShare(): Int = this.matchedEntries.stream().mapToInt(MatchedEntry::shares).sum()
+
+    fun averagePrice(): BigDecimal = this.matchedEntries.stream()
+        .map { it.totalPrice() }.reduce(BigDecimal.ZERO, BigDecimal::add)
+        .divide(BigDecimal(this.shares), RoundingMode.CEILING)
 }

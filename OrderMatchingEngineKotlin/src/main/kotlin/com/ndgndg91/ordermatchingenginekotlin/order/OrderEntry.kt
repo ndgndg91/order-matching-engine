@@ -28,6 +28,12 @@ class OrderEntry(
         this.partialMatchedEntries.add(pm)
     }
 
+    fun partialMatched(e: OrderEntry, shares: Int) {
+        this.partialMatched = true
+        val pm = PartialMatched(e.orderId, e.orderType, shares, e.priceType, e.price, e.timestamp)
+        this.partialMatchedEntries.add(pm)
+    }
+
     fun shares(): Int {
         return if (partialMatched) {
             this.shares - partialMatchedEntries.asSequence().map { it.shares }.sum()

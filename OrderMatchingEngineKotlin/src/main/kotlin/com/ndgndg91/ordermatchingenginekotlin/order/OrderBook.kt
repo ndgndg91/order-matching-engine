@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentSkipListSet
+import kotlin.collections.ArrayList
 
 class OrderBook(private val symbol: Symbol) {
     private val log: Logger = LoggerFactory.getLogger(OrderBook::class.java)
@@ -72,86 +73,226 @@ class OrderBook(private val symbol: Symbol) {
             .onSuccess { queue.remove(it) }
     }
 
-    fun find(orderType: OrderType, orderId: String): OrderEntry? {
-        when (orderType) {
-            OrderType.ASK -> {
-                val inLimitAsks = kotlin.runCatching { this.limitAsks.first { it.orderId == orderId } }
-                if (inLimitAsks.isSuccess) {
-                    return inLimitAsks.getOrThrow()
-                }
-
-                val inMarketAsks = kotlin.runCatching { this.marketAsks.first { it.orderId == orderId } }
-                if (inMarketAsks.isSuccess) {
-                    return inMarketAsks.getOrThrow()
-                }
-
-                return null
+    fun find(orderType: OrderType, orderId: String): OrderEntry? = when (orderType) {
+        OrderType.ASK -> {
+            val inLimitAsks = kotlin.runCatching { this.limitAsks.first { it.orderId == orderId } }
+            if (inLimitAsks.isSuccess) {
+                inLimitAsks.getOrThrow()
             }
-            OrderType.BID -> {
-                val inLimitBids = kotlin.runCatching { this.limitBids.first { it.orderId == orderId } }
-                if (inLimitBids.isSuccess) {
-                    return inLimitBids.getOrThrow()
-                }
 
-
-                val inMarketBids = kotlin.runCatching { this.marketBids.first { it.orderId == orderId } }
-                if (inMarketBids.isSuccess) {
-                    return inMarketBids.getOrThrow()
-                }
-
-                return null
+            val inMarketAsks = kotlin.runCatching { this.marketAsks.first { it.orderId == orderId } }
+            if (inMarketAsks.isSuccess) {
+                inMarketAsks.getOrThrow()
             }
+
+            null
+        }
+        OrderType.BID -> {
+            val inLimitBids = kotlin.runCatching { this.limitBids.first { it.orderId == orderId } }
+            if (inLimitBids.isSuccess) {
+                inLimitBids.getOrThrow()
+            }
+
+
+            val inMarketBids = kotlin.runCatching { this.marketBids.first { it.orderId == orderId } }
+            if (inMarketBids.isSuccess) {
+                inMarketBids.getOrThrow()
+            }
+
+            null
         }
     }
 
-    fun bidsPoll(): OrderEntry? {
-        return if (!this.marketBids.isEmpty()) {
-            val first = this.marketBids.first()
-            this.marketBids.remove(first)
-            first
-        } else {
-            val first = this.limitBids.first()
-            this.limitBids.remove(first)
-            first
-        }
+
+    fun bidsPoll(): OrderEntry? = if (!this.marketBids.isEmpty()) {
+        val first = this.marketBids.first()
+        this.marketBids.remove(first)
+        first
+    } else {
+        val first = this.limitBids.first()
+        this.limitBids.remove(first)
+        first
     }
 
-    fun asksPoll(): OrderEntry? {
-        return if (!this.marketAsks.isEmpty()) {
-            val first = this.marketAsks.first()
-            this.marketAsks.remove(first)
-            first
-        } else {
-            val first = this.limitAsks.first()
-            this.limitAsks.remove(first)
-            first
-        }
+
+    fun asksPoll(): OrderEntry? = if (!this.marketAsks.isEmpty()) {
+        val first = this.marketAsks.first()
+        this.marketAsks.remove(first)
+        first
+    } else {
+        val first = this.limitAsks.first()
+        this.limitAsks.remove(first)
+        first
     }
 
-    fun match(priceType: PriceType, orderType: OrderType): MatchResult {
-        return when(priceType) {
+    fun match(priceType: PriceType, orderType: OrderType): MatchResult? {
+        return when (priceType) {
             PriceType.LIMIT -> matchLimitOrder()
             PriceType.MARKET -> matchMarketOrder(orderType)
         }
     }
 
-    fun matchLimitOrder(): MatchResult {
-        TODO("Not yet implemented")
+    private fun matchLimitOrder(): MatchResult? {
+        val bid = peek(this.limitBids)
+        val ask = peek(this.limitAsks)
+        if (ask == null || bid == null) {
+            return null
+        }
+
+        val c = bid.price.compareTo(ask.price)
+        var d = bid.shares() - ask.shares()
+        // matched
+        if (c >= 0) {
+            if (d == 0) { // exact matched
+                poll(this.limitBids)
+                poll(this.limitAsks)
+                return MatchResult.exact(bid, symbol, ask)
+            } else if (d > 0) { // bid has more shares and need more ask : partial matched
+                val tAsks = ArrayList<OrderEntry>()
+                tAsks.add(poll(this.limitAsks)!!)
+                while (d > 0) {
+                    val peek = peek(this.limitAsks)
+                    if (peek == null || bid.price < peek.price) {
+                        this.limitAsks.addAll(tAsks)
+                        return null
+                    }
+
+                    if (d < peek.shares()) {
+                        peek.partialMatched(bid, d)
+                        tAsks.add(peek)
+                        poll(this.limitBids)
+                        d = 0
+                    } else if (d > peek.shares()) {
+                        d -= peek.shares()
+                        tAsks.add(poll(this.limitAsks)!!)
+                    } else {
+                        tAsks.add(poll(this.limitAsks)!!)
+                        break
+                    }
+                }
+
+                return MatchResult.bigBid(bid, symbol, tAsks)
+            } else { // ask has more shares and need more bid : partial matched
+                ask.partialMatched(bid)
+                poll(this.limitBids)
+                return MatchResult.bigAsk(bid, symbol, ask)
+            }
+        } else { // not matched
+            return null
+        }
     }
 
-    fun matchMarketOrder(orderType: OrderType): MatchResult {
-        return when(orderType) {
+    private fun matchMarketOrder(orderType: OrderType): MatchResult? {
+        return when (orderType) {
             OrderType.BID -> matchMarketBidOrder()
             OrderType.ASK -> matchMarketAskOrder()
         }
     }
 
-    private fun matchMarketAskOrder(): MatchResult {
-        TODO("Not yet implemented")
+    private fun matchMarketBidOrder(): MatchResult? {
+        val mBid = peek(this.marketBids)
+        val lAsk = peek(this.limitAsks)
+        if (mBid == null || lAsk == null) {
+            return null
+        }
+
+        var d = mBid.shares() - lAsk.shares()
+        if (d == 0) { // exact matched
+            poll(this.marketBids)
+            poll(this.limitAsks)
+            return MatchResult.exact(mBid, symbol, lAsk)
+        } else if (d > 0) { // market bid has more shares and need more limit ask
+            val tAsks = ArrayList<OrderEntry>()
+            tAsks.add(poll(this.limitAsks)!!)
+            while (d > 0) {
+                val peek = peek(this.limitAsks)
+                if (peek == null) {
+                    this.limitAsks.addAll(tAsks)
+                    return null
+                }
+
+                if (d < peek.shares()) {
+                    peek.partialMatched(mBid, d)
+                    tAsks.add(peek)
+                    poll(this.marketBids)
+                    d = 0
+                } else if (d > peek.shares()) {
+                    d -= peek.shares()
+                    tAsks.add(poll(this.limitAsks)!!)
+                } else {
+                    tAsks.add(poll(this.limitAsks)!!)
+                    break
+                }
+            }
+
+            return MatchResult.bigBid(mBid, symbol, tAsks)
+        } else { // limit ask has more shares and need more market bid
+            lAsk.partialMatched(mBid)
+            poll(this.marketBids)
+            return MatchResult.bigAsk(mBid, symbol, lAsk)
+        }
     }
 
-    private fun matchMarketBidOrder(): MatchResult {
-        TODO("Not yet implemented")
+    private fun matchMarketAskOrder(): MatchResult? {
+        val mAsk = peek(this.marketAsks)
+        val lBid = peek(this.limitBids)
+        if (mAsk == null || lBid == null) {
+            return null
+        }
+
+        var d = mAsk.shares() - lBid.shares()
+        if (d == 0) { // exact matched
+            poll(this.marketAsks)
+            poll(this.limitBids)
+            return MatchResult.exact(mAsk, symbol, lBid)
+        } else if (d > 0) { // ask has more shares and need more bid
+            val tBids = ArrayList<OrderEntry>()
+            tBids.add(poll(this.limitBids)!!)
+            while (d > 0) {
+                val peek = peek(this.limitBids)
+                if (peek == null) {
+                    this.limitBids.addAll(tBids)
+                    return null
+                }
+
+                if (d < peek.shares()) {
+                    peek.partialMatched(mAsk, d)
+                    tBids.add(peek)
+                    poll(this.marketBids)
+                    d = 0
+                } else if (d > peek.shares()) {
+                    d -= peek.shares()
+                    tBids.add(poll(this.limitBids)!!)
+                } else { // d == peek.shares()
+                    tBids.add(poll(this.limitBids)!!)
+                    break
+                }
+            }
+
+            return MatchResult.bigBid(mAsk, symbol, tBids)
+        } else { // bid has more shares and need more ask
+            lBid.partialMatched(mAsk)
+            poll(this.marketAsks)
+            return MatchResult.bigAsk(mAsk, symbol, lBid)
+        }
+    }
+
+    private fun peek(queue: SortedSet<OrderEntry>): OrderEntry? {
+        return try {
+            queue.first()
+        } catch (e: NoSuchElementException) {
+            null
+        }
+    }
+
+    private fun poll(queue: SortedSet<OrderEntry>): OrderEntry? {
+        return try {
+            val first = queue.first()
+            queue.remove(first)
+            first
+        } catch (e: NoSuchElementException) {
+            null
+        }
     }
 
 }

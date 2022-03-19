@@ -5,11 +5,11 @@ import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.AddOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.CancelOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.dto.request.ModifyOrderRequest
 import com.ndgndg91.ordermatchingenginekotlin.order.event.OrderMatchTriggerEvent
+import com.ndgndg91.ordermatchingenginekotlin.order.repository.MatchOrderRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
@@ -17,7 +17,7 @@ import java.util.*
 @Service
 class Engine(
     private val orderBooks: OrderBooks,
-    private val redisTemplate: RedisTemplate<String, String>,
+    private val matchOrderRepository: MatchOrderRepository,
     private val publisher: ApplicationEventPublisher
 ) {
     private val log: Logger = LoggerFactory.getLogger(Engine::class.java)
@@ -71,7 +71,9 @@ class Engine(
     @Async
     @EventListener
     fun match(event: OrderMatchTriggerEvent) {
-//        redisTemplate.opsForValue().set(event.symbol.name, "")
-        TODO("engine match logic not yet")
+        log.info("{}", event)
+        orderBooks.match(event.symbol, event.priceType, event.orderType)
+            .also { log.info("$it"); }
+            ?.let { matchOrderRepository.save(it) }
     }
 }

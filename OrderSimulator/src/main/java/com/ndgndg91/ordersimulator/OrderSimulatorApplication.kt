@@ -25,7 +25,7 @@ open class OrderSimulatorApplication {
         return CommandLineRunner {
             val client = HttpClient.newBuilder()
                 .executor(Executors.newFixedThreadPool(100))
-                .build();
+                .build()
 
             val maxShare = 5000
             val minShare = 50
@@ -46,10 +46,10 @@ open class OrderSimulatorApplication {
                     "priceType": "$priceType",
                     "price": $price}"""
 
-                val post = HttpRequest.newBuilder(URI("http://localhost:8080/apis/orders"))
+                val post = HttpRequest.newBuilder(URI("http://localhost:9090/apis/orders"))
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .build();
+                    .build()
                 client.sendAsync(post, HttpResponse.BodyHandlers.ofString())
                     .thenApply { res ->
                         log.info("headers : {}", res.headers())

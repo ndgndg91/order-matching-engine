@@ -264,6 +264,7 @@ class OrderBook(private val symbol: Symbol) {
                     tAsks.add(poll(this.limitAsks)!!)
                 } else {
                     tAsks.add(poll(this.limitAsks)!!)
+                    poll(this.marketBids)
                     break
                 }
             }
@@ -308,6 +309,7 @@ class OrderBook(private val symbol: Symbol) {
                     tBids.add(poll(this.limitBids)!!)
                 } else { // d == peek.shares()
                     tBids.add(poll(this.limitBids)!!)
+                    poll(this.marketAsks)
                     break
                 }
             }

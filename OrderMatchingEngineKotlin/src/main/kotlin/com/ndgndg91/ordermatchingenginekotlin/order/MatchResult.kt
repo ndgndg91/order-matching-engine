@@ -16,17 +16,13 @@ class MatchResult {
     var matchedEntries: List<MatchedEntry> = mutableListOf()
 
     companion object {
-        fun exact(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult {
-            return MatchResult(bid, symbol, ask)
-        }
+        fun bidExactAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid, symbol, ask)
+        fun bigBidSmallAsks(bid: OrderEntry, symbol: Symbol, tAsks: List<OrderEntry>): MatchResult = MatchResult(bid, symbol, tAsks)
+        fun smallBidBigAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid, symbol, ask)
 
-        fun bigBid(bid: OrderEntry, symbol: Symbol, tAsks: List<OrderEntry>): MatchResult {
-            return MatchResult(bid, symbol, tAsks)
-        }
-
-        fun bigAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult {
-            return MatchResult(bid, symbol, ask)
-        }
+        fun askExactBid(ask: OrderEntry, symbol: Symbol, bid: OrderEntry): MatchResult = MatchResult(ask, symbol, bid)
+        fun bigAskSmallBids(ask: OrderEntry, symbol: Symbol, tBids: List<OrderEntry>): MatchResult = MatchResult(ask, symbol, tBids)
+        fun smallAskBigBid(ask: OrderEntry, symbol: Symbol, bid: OrderEntry): MatchResult = MatchResult(ask, symbol, bid)
     }
 
     private constructor(bid: OrderEntry, symbol: Symbol, ask: OrderEntry) {

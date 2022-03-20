@@ -114,12 +114,68 @@ class OrderBook(private val symbol: Symbol) {
 
     fun match(priceType: PriceType, orderType: OrderType): MatchResult? {
         return when (priceType) {
-            PriceType.LIMIT -> matchLimitOrder()
+            PriceType.LIMIT -> matchLimitOrder(orderType)
             PriceType.MARKET -> matchMarketOrder(orderType)
         }
     }
 
-    private fun matchLimitOrder(): MatchResult? {
+    private fun matchLimitOrder(orderType: OrderType): MatchResult? = when(orderType) {
+        OrderType.BID -> matchLimitBidOrder()
+        OrderType.ASK -> matchLimitAskOrder()
+    }
+
+    private fun matchLimitAskOrder(): MatchResult? {
+        val bid = peek(this.limitBids)
+        val ask = peek(this.limitAsks)
+        if (bid == null || ask == null) {
+            return null
+        }
+
+        val c = bid.price.compareTo(ask.price)
+        var d = ask.shares() - bid.shares()
+
+        // matched
+        if (c >= 0) {
+            if (d == 0) { // exact matched
+                poll(this.limitBids)
+                poll(this.limitAsks)
+                return MatchResult.askExactBid(ask, symbol, bid)
+            } else if (d > 0) { // ask has more shares and need more ask : partial matched
+                val tBids = ArrayList<OrderEntry>()
+                tBids.add(poll(this.limitBids)!!)
+                while (d > 0) {
+                    val nBid = peek(this.limitBids)
+                    if (nBid == null || ask.price > bid.price) {
+                        this.limitBids.addAll(tBids)
+                        return null
+                    }
+
+                    if (d < nBid.shares()) { // bid has more shares
+                        nBid.partialMatched(ask, d)
+                        tBids.add(nBid)
+                        poll(this.limitAsks)
+                        d = 0
+                    } else if (d > nBid.shares()) { // need more bid
+                        d -= nBid.shares()
+                        tBids.add(poll(this.limitBids)!!)
+                    } else { // exact
+                        tBids.add(poll(this.limitBids)!!)
+                        break
+                    }
+                }
+
+                return MatchResult.bigAskSmallBids(ask, symbol, tBids)
+            } else { // bid has more shares and need more bid : partial matched
+                bid.partialMatched(ask)
+                poll(this.limitAsks)
+                return MatchResult.smallAskBigBid(ask, symbol, bid)
+            }
+        } else { // not matched
+            return null
+        }
+    }
+
+    private fun matchLimitBidOrder(): MatchResult? {
         val bid = peek(this.limitBids)
         val ask = peek(this.limitAsks)
         if (ask == null || bid == null) {
@@ -133,7 +189,7 @@ class OrderBook(private val symbol: Symbol) {
             if (d == 0) { // exact matched
                 poll(this.limitBids)
                 poll(this.limitAsks)
-                return MatchResult.exact(bid, symbol, ask)
+                return MatchResult.bidExactAsk(bid, symbol, ask)
             } else if (d > 0) { // bid has more shares and need more ask : partial matched
                 val tAsks = ArrayList<OrderEntry>()
                 tAsks.add(poll(this.limitAsks)!!)
@@ -158,11 +214,11 @@ class OrderBook(private val symbol: Symbol) {
                     }
                 }
 
-                return MatchResult.bigBid(bid, symbol, tAsks)
+                return MatchResult.bigBidSmallAsks(bid, symbol, tAsks)
             } else { // ask has more shares and need more bid : partial matched
                 ask.partialMatched(bid)
                 poll(this.limitBids)
-                return MatchResult.bigAsk(bid, symbol, ask)
+                return MatchResult.smallBidBigAsk(bid, symbol, ask)
             }
         } else { // not matched
             return null
@@ -187,7 +243,7 @@ class OrderBook(private val symbol: Symbol) {
         if (d == 0) { // exact matched
             poll(this.marketBids)
             poll(this.limitAsks)
-            return MatchResult.exact(mBid, symbol, lAsk)
+            return MatchResult.bidExactAsk(mBid, symbol, lAsk)
         } else if (d > 0) { // market bid has more shares and need more limit ask
             val tAsks = ArrayList<OrderEntry>()
             tAsks.add(poll(this.limitAsks)!!)
@@ -212,11 +268,11 @@ class OrderBook(private val symbol: Symbol) {
                 }
             }
 
-            return MatchResult.bigBid(mBid, symbol, tAsks)
+            return MatchResult.bigBidSmallAsks(mBid, symbol, tAsks)
         } else { // limit ask has more shares and need more market bid
             lAsk.partialMatched(mBid)
             poll(this.marketBids)
-            return MatchResult.bigAsk(mBid, symbol, lAsk)
+            return MatchResult.smallBidBigAsk(mBid, symbol, lAsk)
         }
     }
 
@@ -231,7 +287,7 @@ class OrderBook(private val symbol: Symbol) {
         if (d == 0) { // exact matched
             poll(this.marketAsks)
             poll(this.limitBids)
-            return MatchResult.exact(mAsk, symbol, lBid)
+            return MatchResult.bidExactAsk(mAsk, symbol, lBid)
         } else if (d > 0) { // ask has more shares and need more bid
             val tBids = ArrayList<OrderEntry>()
             tBids.add(poll(this.limitBids)!!)
@@ -256,11 +312,11 @@ class OrderBook(private val symbol: Symbol) {
                 }
             }
 
-            return MatchResult.bigBid(mAsk, symbol, tBids)
+            return MatchResult.bigBidSmallAsks(mAsk, symbol, tBids)
         } else { // bid has more shares and need more ask
             lBid.partialMatched(mAsk)
             poll(this.marketAsks)
-            return MatchResult.bigAsk(mAsk, symbol, lBid)
+            return MatchResult.smallBidBigAsk(mAsk, symbol, lBid)
         }
     }
 

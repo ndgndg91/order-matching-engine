@@ -509,56 +509,180 @@ internal class OrderBooksTest {
 
     @Test
     fun bigBidLimitMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        val bigBidLimit = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.BID)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(50_000))
+            .shares(2500)
+            .symbol(Symbol.AAPL)
+            .build()
+
+        val smallAskLimit1 = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.ASK)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(50_000))
+            .shares(500)
+            .symbol(Symbol.AAPL)
+            .build()
+
+        val smallAskLimit2 = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.ASK)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(50_000))
+            .shares(1500)
+            .symbol(Symbol.AAPL)
+            .build()
+
+        // when
+        orderBook.addOrder(bigBidLimit)
+        orderBook.addOrder(smallAskLimit1)
+        orderBook.addOrder(smallAskLimit2)
+
+        val match1 = orderBook.match(PriceType.LIMIT, OrderType.ASK)
+        val match2 = orderBook.match(PriceType.LIMIT, OrderType.ASK)
+        val bidsPoll = orderBook.bidsPoll()
+
+        log.info("$match1")
+        log.info("$match2")
+        log.info("$bidsPoll")
+
+        // then
+        Assertions.assertThat(match1).isNotNull
+        Assertions.assertThat(match2).isNotNull
+        Assertions.assertThat(bidsPoll).isNotNull
+
+        Assertions.assertThat(match1!!.orderId).isEqualTo(smallAskLimit1.orderId)
+        Assertions.assertThat(match1.price).isEqualTo(smallAskLimit1.price)
+        Assertions.assertThat(match1.shares).isEqualTo(smallAskLimit1.shares)
+
+        Assertions.assertThat(match2!!.orderId).isEqualTo(smallAskLimit2.orderId)
+        Assertions.assertThat(match2.price).isEqualTo(smallAskLimit2.price)
+        Assertions.assertThat(match2.shares).isEqualTo(smallAskLimit2.shares)
+
+        Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(bigBidLimit.orderId)
+        Assertions.assertThat(bidsPoll.shares).isEqualTo(bigBidLimit.shares)
+        Assertions.assertThat(bidsPoll.shares()).isEqualTo(500)
     }
 
     @Test
     fun limitOrderSimulation_1() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun limitOrderSimulation_2() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun bidMarketEmptyMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        val marketBid = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.BID)
+            .priceType(PriceType.MARKET)
+            .price(BigDecimal(10_000))
+            .symbol(Symbol.AAPL)
+            .shares(500)
+            .build()
+
+        // when
+        orderBook.addOrder(marketBid)
+        val match = orderBook.match(PriceType.MARKET, OrderType.BID)
+        val bidsPoll = orderBook.bidsPoll()
+
+        // then
+        Assertions.assertThat(match).isNull()
+        Assertions.assertThat(bidsPoll).isNotNull
+        Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(marketBid.orderId)
+        Assertions.assertThat(bidsPoll.shares).isEqualTo(marketBid.shares)
     }
 
     @Test
     fun bidMarketExactMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun bidMarketBigBidMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun bidMarketBigAskMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun askMarketEmptyMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun askMarketExactMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun askMarketBigBidMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 
     @Test
     fun askMarketBigAskMatch() {
+        // given
+        val orderBook = OrderBook(Symbol.AAPL)
 
+        // when
+
+        // then
     }
 }

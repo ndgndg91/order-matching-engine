@@ -1,2 +1,8 @@
 server:
   port: 18080
+
+logging:
+  level:
+    com.ndgndg91.ordersimulator.client:
+      KotlinEngineClient: DEBUG
+      JavaEngineClient: DEBUG

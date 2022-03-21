@@ -1,32 +1,33 @@
 package com.ndgndg91.ordersimulator
 
+import com.ndgndg91.ordersimulator.client.JavaEngineClient
+import com.ndgndg91.ordersimulator.client.KotlinEngineClient
+import com.ndgndg91.ordersimulator.client.request.AddOrderRequest
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
-import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.util.concurrent.Executors
 import kotlin.random.Random
 import kotlin.random.nextInt
 
+@EnableFeignClients
 @SpringBootApplication
 open class OrderSimulatorApplication {
 
     private val log = LoggerFactory.getLogger("OrderSimulatorApplication")
 
+    @Autowired
+    private lateinit var kotlinEngineClient: KotlinEngineClient
+
+    @Autowired
+    private lateinit var javaEngineClient: JavaEngineClient
+
     @Bean
     open fun runner(): CommandLineRunner {
         return CommandLineRunner {
-            val client = HttpClient.newBuilder()
-                .executor(Executors.newFixedThreadPool(100))
-                .build()
-
             val maxShare = 5000
             val minShare = 50
 
@@ -39,24 +40,10 @@ open class OrderSimulatorApplication {
                 val shares = Random.nextInt(minShare..maxShare).toString()
                 val price = Random.nextInt(minPrice..maxPrice).toString()
                 val symbol = symbol(Random.nextInt(8))
-                val body = """{
-                    "orderType": "$orderType",
-                    "symbol": "$symbol",
-                    "shares": $shares,
-                    "priceType": "$priceType",
-                    "price": $price}"""
 
-                val post = HttpRequest.newBuilder(URI("http://localhost:9090/apis/orders"))
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .build()
-                client.sendAsync(post, HttpResponse.BodyHandlers.ofString())
-                    .thenApply { res ->
-                        log.info("headers : {}", res.headers())
-                        log.info("status code: {}", res.statusCode())
-                        res
-                    }.thenApply { it.body() }
-                    .thenAccept(log::info)
+                val addOrderRequest = AddOrderRequest(orderType, symbol, shares, priceType, price)
+                kotlinEngineClient.addOrder(addOrderRequest)
+                javaEngineClient.addOrder(addOrderRequest)
                 log.info("new request start")
                 Thread.sleep(200L)
             }

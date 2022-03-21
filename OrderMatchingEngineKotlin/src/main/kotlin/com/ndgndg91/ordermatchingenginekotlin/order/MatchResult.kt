@@ -44,7 +44,7 @@ class MatchResult {
         this.priceType = bid.priceType
         this.price = bid.price
         this.timestamp = bid.timestamp
-        val entries = asks.stream().map { MatchedEntry(it, bid.orderId) }.toList()
+        val entries = asks.asSequence().map { MatchedEntry(it, bid.orderId) }.toList()
         this.matchedEntries = this.matchedEntries.plus(entries)
     }
 

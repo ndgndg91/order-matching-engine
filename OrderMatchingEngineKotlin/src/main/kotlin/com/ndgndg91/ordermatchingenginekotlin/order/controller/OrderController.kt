@@ -11,7 +11,6 @@ import com.ndgndg91.ordermatchingenginekotlin.order.validation.OrderTypeValue
 import com.ndgndg91.ordermatchingenginekotlin.order.validation.SymbolValue
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -22,7 +21,7 @@ import javax.validation.constraints.NotNull
 
 @Validated
 @RestController
-class OrderController(private val engine: Engine, private val redisTemplate: RedisTemplate<String, String>) {
+class OrderController(private val engine: Engine,) {
 
     private val log: Logger = LoggerFactory.getLogger(OrderController::class.java)
 
@@ -39,13 +38,13 @@ class OrderController(private val engine: Engine, private val redisTemplate: Red
     fun modifyOrder(@Valid @RequestBody request: ModifyOrderRequest): ResponseEntity<ApiResponse<Unit>> {
         log.info("{}", request)
         engine.modifyOrder(request)
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build()
     }
 
     @DeleteMapping("/apis/orders")
     fun cancelOrder(@Valid @RequestBody request: CancelOrderRequest): ResponseEntity<ApiResponse<Unit>> {
         engine.cancelOrder(request)
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/apis/orders/{symbol}/{orderType}/{orderId}")
@@ -66,28 +65,8 @@ class OrderController(private val engine: Engine, private val redisTemplate: Red
         return ResponseEntity.ok(ApiResponse(OrderEntryResponse(e)))
     }
 
-    @PostMapping("/apis/redis/{key}/{value}")
-    fun redisSet(
-        @PathVariable key: String,
-        @PathVariable value: String
-    ): ResponseEntity<ApiResponse<Unit>> {
-        redisTemplate.opsForValue().set(key, value)
-        return ResponseEntity.ok().build()
+    @GetMapping("/apis/match/{symbol}")
+    fun findMatchOrders(@PathVariable @SymbolValue symbol: String): ResponseEntity<ApiResponse<MutableList<String>?>> {
+        return ResponseEntity.ok(ApiResponse(engine.test(symbol)))
     }
-
-    @GetMapping("/apis/redis/{key}")
-    fun redisGet(
-        @PathVariable key: String
-    ): ResponseEntity<ApiResponse<String>> {
-        val maybe = kotlin.runCatching { redisTemplate.opsForValue().get(key)!! }
-        if (maybe.isFailure) {
-            throw OrderServiceException(null, HttpStatus.NOT_FOUND.value(), String.format("Not Found value by %s", key))
-        }
-        return ResponseEntity.ok(ApiResponse(maybe.getOrThrow()))
-    }
-
-//    @GetMapping("/apis/orders/bids/{symbol}/poll")
-//    fun bidEntry(@PathVariable symbol: String): ResponseEntity<ApiResponse<?>> {
-//        return
-//    }
 }

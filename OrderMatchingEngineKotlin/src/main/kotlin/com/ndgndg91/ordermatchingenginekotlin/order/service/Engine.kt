@@ -68,6 +68,10 @@ class Engine(
         return orderBooks.find(Symbol.valueOf(symbol), OrderType.valueOf(orderType), orderId)
     }
 
+    fun test(symbol: String): MutableList<String>? {
+        return matchOrderRepository.findAllBySymbol(symbol)
+    }
+
     @Async
     @EventListener
     fun match(event: OrderMatchTriggerEvent) {

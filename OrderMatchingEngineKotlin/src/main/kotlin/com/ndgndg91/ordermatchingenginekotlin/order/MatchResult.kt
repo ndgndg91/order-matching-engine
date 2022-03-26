@@ -12,7 +12,7 @@ class MatchResult(
     val priceType: PriceType,
     val price: BigDecimal,
     private val timestamp: LocalDateTime,
-    var matchedEntries: List<MatchedEntry> = mutableListOf()
+    var matchedEntries: List<MatchedEntry> = listOf()
 ) {
     companion object {
         fun bidExactAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid.toBidEntry(), symbol, ask.toAskEntry())
@@ -32,7 +32,7 @@ class MatchResult(
         priceType = ask.priceType,
         price = ask.price,
         timestamp = ask.timestamp,
-        matchedEntries = mutableListOf(MatchedEntry(ask, bid.shares()))
+        matchedEntries = listOf(MatchedEntry(ask, bid.shares()))
     )
 
     private constructor(ask: AskOrderEntry, symbol: Symbol, bids: List<BidOrderEntry>): this(
@@ -54,7 +54,7 @@ class MatchResult(
         priceType = bid.priceType,
         price = bid.price,
         timestamp = bid.timestamp,
-        matchedEntries = mutableListOf(MatchedEntry(ask, bid.shares()))
+        matchedEntries = listOf(MatchedEntry(ask, bid.shares()))
     )
 
     private constructor(bid: BidOrderEntry, symbol: Symbol, asks: List<AskOrderEntry>): this(

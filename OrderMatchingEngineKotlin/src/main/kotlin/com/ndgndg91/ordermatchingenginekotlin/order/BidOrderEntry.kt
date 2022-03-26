@@ -11,5 +11,5 @@ class BidOrderEntry(
     override val price: BigDecimal,
     override val timestamp: LocalDateTime,
     override var partialMatched: Boolean,
-    override val partialMatchedEntries: MutableList<PartialMatched>
+    override var partialMatchedEntries: List<PartialMatched>
 ) : OrderEntry(orderId, orderType, shares, priceType, price, timestamp, partialMatched, partialMatchedEntries)

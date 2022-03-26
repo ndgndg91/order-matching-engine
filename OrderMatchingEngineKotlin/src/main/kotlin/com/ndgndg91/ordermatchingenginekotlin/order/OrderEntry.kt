@@ -11,7 +11,7 @@ open class OrderEntry(
     open val price: BigDecimal,
     open val timestamp: LocalDateTime,
     open var partialMatched: Boolean,
-    open val partialMatchedEntries: MutableList<PartialMatched>) {
+    open var partialMatchedEntries: List<PartialMatched>) {
 
     fun toBidEntry(): BidOrderEntry = BidOrderEntry(
         orderId,
@@ -46,13 +46,13 @@ open class OrderEntry(
             e.price,
             e.timestamp
         )
-        this.partialMatchedEntries.add(pm)
+        this.partialMatchedEntries = this.partialMatchedEntries.plus(pm)
     }
 
     fun partialMatched(e: OrderEntry, shares: Int) {
         this.partialMatched = true
         val pm = PartialMatched(e.orderId, e.orderType, shares, e.priceType, e.price, e.timestamp)
-        this.partialMatchedEntries.add(pm)
+        this.partialMatchedEntries = this.partialMatchedEntries.plus(pm)
     }
 
     fun shares(): Int {

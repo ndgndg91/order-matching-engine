@@ -16,7 +16,7 @@ class MatchOrderRepository(private val redisTemplate: RedisTemplate<String, Stri
         redisTemplate.opsForList().rightPush("${symbol}:matchedOrder", "$matchResult")
     }
 
-    fun findAllBySymbol(symbol: String): MutableList<String>? {
+    fun findAllBySymbol(symbol: String): List<String>? {
         return redisTemplate.opsForList().range("${symbol}:matchedOrder", 0, -1)
     }
 }

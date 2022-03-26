@@ -20,7 +20,7 @@ class Order private constructor(
         price = price,
         timestamp = timestamp,
         partialMatched = false,
-        partialMatchedEntries = mutableListOf()
+        partialMatchedEntries = listOf()
     )
 
     data class Builder(

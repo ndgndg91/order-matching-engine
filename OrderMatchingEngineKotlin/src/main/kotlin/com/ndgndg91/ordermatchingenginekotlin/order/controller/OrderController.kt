@@ -66,7 +66,7 @@ class OrderController(private val engine: Engine,) {
     }
 
     @GetMapping("/apis/match/{symbol}")
-    fun findMatchOrders(@PathVariable @SymbolValue symbol: String): ResponseEntity<ApiResponse<MutableList<String>?>> {
+    fun findMatchOrders(@PathVariable @SymbolValue symbol: String): ResponseEntity<ApiResponse<List<String>?>> {
         return ResponseEntity.ok(ApiResponse(engine.test(symbol)))
     }
 }

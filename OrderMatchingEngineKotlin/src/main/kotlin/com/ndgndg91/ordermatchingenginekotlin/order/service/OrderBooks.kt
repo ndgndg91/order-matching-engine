@@ -37,7 +37,8 @@ class OrderBooks {
     }
 
     fun cancelOrder(order: Order) {
-        val orderBook = m[order.symbol]
+        val orderBook = m[order.symbol
+        ]
         if (kotlin.runCatching { orderBook!!.cancelOrder(order) }.isFailure) {
             throw OrderServiceException(
                 null,

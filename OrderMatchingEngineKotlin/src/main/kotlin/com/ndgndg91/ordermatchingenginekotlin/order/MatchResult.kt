@@ -3,50 +3,70 @@ package com.ndgndg91.ordermatchingenginekotlin.order
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
-import kotlin.streams.toList
 
-class MatchResult {
-    val symbol: Symbol
-    val orderId: String
-    val orderType: OrderType
-    val shares: Int
-    val priceType: PriceType
-    val price: BigDecimal
-    private val timestamp: LocalDateTime
+class MatchResult(
+    val symbol: Symbol,
+    val orderId: String,
+    val orderType: OrderType,
+    val shares: Int,
+    val priceType: PriceType,
+    val price: BigDecimal,
+    private val timestamp: LocalDateTime,
     var matchedEntries: List<MatchedEntry> = mutableListOf()
-
+) {
     companion object {
-        fun bidExactAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid, symbol, ask)
-        fun bigBidSmallAsks(bid: OrderEntry, symbol: Symbol, tAsks: List<OrderEntry>): MatchResult = MatchResult(bid, symbol, tAsks)
-        fun smallBidBigAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid, symbol, ask)
+        fun bidExactAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid.toBidEntry(), symbol, ask.toAskEntry())
+        fun bigBidSmallAsks(bid: OrderEntry, symbol: Symbol, tAsks: List<OrderEntry>): MatchResult = MatchResult(bid.toBidEntry(), symbol, tAsks.map { it.toAskEntry() })
+        fun smallBidBigAsk(bid: OrderEntry, symbol: Symbol, ask: OrderEntry): MatchResult = MatchResult(bid.toBidEntry(), symbol, ask.toAskEntry())
 
-        fun askExactBid(ask: OrderEntry, symbol: Symbol, bid: OrderEntry): MatchResult = MatchResult(ask, symbol, bid)
-        fun bigAskSmallBids(ask: OrderEntry, symbol: Symbol, tBids: List<OrderEntry>): MatchResult = MatchResult(ask, symbol, tBids)
-        fun smallAskBigBid(ask: OrderEntry, symbol: Symbol, bid: OrderEntry): MatchResult = MatchResult(ask, symbol, bid)
+        fun askExactBid(ask: OrderEntry, symbol: Symbol, bid: OrderEntry): MatchResult = MatchResult(ask.toAskEntry(), symbol, bid.toBidEntry())
+        fun bigAskSmallBids(ask: OrderEntry, symbol: Symbol, tBids: List<OrderEntry>): MatchResult = MatchResult(ask.toAskEntry(), symbol, tBids.map { it.toBidEntry() })
+        fun smallAskBigBid(ask: OrderEntry, symbol: Symbol, bid: OrderEntry): MatchResult = MatchResult(ask.toAskEntry(), symbol, bid.toBidEntry())
     }
 
-    private constructor(bid: OrderEntry, symbol: Symbol, ask: OrderEntry) {
-        this.symbol = symbol
-        this.orderId = bid.orderId
-        this.orderType = bid.orderType
-        this.shares = if (bid.partialMatched) bid.shares() else bid.shares
-        this.priceType = bid.priceType
-        this.price = bid.price
-        this.timestamp = bid.timestamp
-        this.matchedEntries = this.matchedEntries.plus(MatchedEntry(ask, bid.shares()))
-    }
+    private constructor(ask: AskOrderEntry, symbol: Symbol, bid: BidOrderEntry): this(
+        symbol = symbol,
+        orderId = ask.orderId,
+        orderType = ask.orderType,
+        shares = if (ask.partialMatched) ask.shares() else ask.shares,
+        priceType = ask.priceType,
+        price = ask.price,
+        timestamp = ask.timestamp,
+        matchedEntries = mutableListOf(MatchedEntry(ask, bid.shares()))
+    )
 
-    private constructor(bid: OrderEntry, symbol: Symbol, asks: List<OrderEntry>) {
-        this.symbol = symbol
-        this.orderId = bid.orderId
-        this.orderType = bid.orderType
-        this.shares = if (bid.partialMatched) bid.shares() else bid.shares
-        this.priceType = bid.priceType
-        this.price = bid.price
-        this.timestamp = bid.timestamp
-        val entries = asks.asSequence().map { MatchedEntry(it, bid.orderId) }.toList()
-        this.matchedEntries = this.matchedEntries.plus(entries)
-    }
+    private constructor(ask: AskOrderEntry, symbol: Symbol, bids: List<BidOrderEntry>): this(
+        symbol = symbol,
+        orderId = ask.orderId,
+        orderType = ask.orderType,
+        shares = if (ask.partialMatched) ask.shares() else ask.shares,
+        priceType = ask.priceType,
+        price = ask.price,
+        timestamp = ask.timestamp,
+        matchedEntries = bids.map { MatchedEntry(it, ask.orderId)}
+    )
+
+    private constructor(bid: BidOrderEntry, symbol: Symbol, ask: AskOrderEntry): this(
+        symbol = symbol,
+        orderId = bid.orderId,
+        orderType = bid.orderType,
+        shares = if (bid.partialMatched) bid.shares() else bid.shares,
+        priceType = bid.priceType,
+        price = bid.price,
+        timestamp = bid.timestamp,
+        matchedEntries = mutableListOf(MatchedEntry(ask, bid.shares()))
+    )
+
+    private constructor(bid: BidOrderEntry, symbol: Symbol, asks: List<AskOrderEntry>): this(
+        symbol = symbol,
+        orderId = bid.orderId,
+        orderType = bid.orderType,
+        shares = if (bid.partialMatched) bid.shares() else bid.shares,
+        priceType = bid.priceType,
+        price = bid.price,
+        timestamp = bid.timestamp,
+        matchedEntries = asks.map { MatchedEntry(it, bid.orderId) }
+    )
 
     fun matchedShare(): Int = this.matchedEntries.stream().mapToInt(MatchedEntry::shares).sum()
 

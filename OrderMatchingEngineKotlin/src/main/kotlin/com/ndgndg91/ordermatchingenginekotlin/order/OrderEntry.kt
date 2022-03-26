@@ -3,17 +3,38 @@ package com.ndgndg91.ordermatchingenginekotlin.order
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-class OrderEntry(
-    order: Order,
-) {
-    val orderId: String = order.orderId
-    val orderType: OrderType = order.orderType
-    val shares: Int = order.shares
-    val priceType: PriceType = order.priceType
-    val price: BigDecimal = order.price
-    val timestamp: LocalDateTime = order.timestamp
-    var partialMatched: Boolean = false
-    val partialMatchedEntries: MutableList<PartialMatched> = mutableListOf()
+open class OrderEntry(
+    open val orderId: String,
+    open val orderType: OrderType,
+    open val shares: Int,
+    open val priceType: PriceType,
+    open val price: BigDecimal,
+    open val timestamp: LocalDateTime,
+    open var partialMatched: Boolean,
+    open val partialMatchedEntries: MutableList<PartialMatched>) {
+
+    fun toBidEntry(): BidOrderEntry = BidOrderEntry(
+        orderId,
+        orderType,
+        shares,
+        priceType,
+        price,
+        timestamp,
+        partialMatched,
+        partialMatchedEntries
+    )
+
+    fun toAskEntry(): AskOrderEntry = AskOrderEntry(
+        orderId,
+        orderType,
+        shares,
+        priceType,
+        price,
+        timestamp,
+        partialMatched,
+        partialMatchedEntries
+    )
+
 
     fun partialMatched(e: OrderEntry) {
         this.partialMatched = true
@@ -81,6 +102,4 @@ class OrderEntry(
     override fun toString(): String {
         return "OrderEntry(orderId='$orderId', orderType=$orderType, shares=$shares, priceType=$priceType, price=$price, timestamp=$timestamp, partialMatched=$partialMatched, partialMatchedEntries=$partialMatchedEntries)"
     }
-
-
 }

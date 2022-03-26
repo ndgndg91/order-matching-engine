@@ -330,7 +330,8 @@ internal class OrderBooksTest {
         val match = orderBook.match(PriceType.LIMIT, OrderType.BID)
 
         // then
-        Assertions.assertThat(match).isNull()
+        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(0)
     }
 
     @Test
@@ -361,7 +362,8 @@ internal class OrderBooksTest {
         val match = orderBook.match(PriceType.MARKET, OrderType.BID)
 
         // then
-        Assertions.assertThat(match).isNull()
+        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(0)
     }
 
     @Test
@@ -392,7 +394,8 @@ internal class OrderBooksTest {
         val match = orderBook.match(PriceType.MARKET, OrderType.ASK)
 
         // then
-        Assertions.assertThat(match).isNull()
+        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(0)
     }
 
     @Test
@@ -424,16 +427,17 @@ internal class OrderBooksTest {
 
         // then
         Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(1)
         Assertions.assertThat(orderBook.bidsPoll()).isNull()
         Assertions.assertThat(orderBook.asksPoll()).isNull()
-        Assertions.assertThat(match!!.orderId).isEqualTo(limitBid.orderId)
-        Assertions.assertThat(match.shares).isEqualTo(limitBid.shares)
-        Assertions.assertThat(match.price).isEqualTo(limitBid.price)
-        Assertions.assertThat(match.matchedShare()).isEqualTo(limitBid.shares)
-        Assertions.assertThat(match.matchedEntries).hasSize(1)
-        Assertions.assertThat(match.matchedEntries[0].orderId).isEqualTo(limitAsk.orderId)
-        Assertions.assertThat(match.matchedEntries[0].price).isEqualTo(limitAsk.price)
-        Assertions.assertThat(match.matchedEntries[0].shares).isEqualTo(limitAsk.shares)
+        Assertions.assertThat(match[0].orderId).isEqualTo(limitBid.orderId)
+        Assertions.assertThat(match[0].shares).isEqualTo(limitBid.shares)
+        Assertions.assertThat(match[0].price).isEqualTo(limitBid.price)
+        Assertions.assertThat(match[0].matchedShare()).isEqualTo(limitBid.shares)
+        Assertions.assertThat(match[0].matchedEntries).hasSize(1)
+        Assertions.assertThat(match[0].matchedEntries[0].orderId).isEqualTo(limitAsk.orderId)
+        Assertions.assertThat(match[0].matchedEntries[0].price).isEqualTo(limitAsk.price)
+        Assertions.assertThat(match[0].matchedEntries[0].shares).isEqualTo(limitAsk.shares)
     }
 
     @Test
@@ -475,30 +479,30 @@ internal class OrderBooksTest {
         val match2 = orderBook.match(PriceType.LIMIT, OrderType.BID)
 
         // then
-        Assertions.assertThat(match1).isNotNull
-        Assertions.assertThat(match1!!.orderId).isEqualTo(smallBid1.orderId)
-        Assertions.assertThat(match1.price).isEqualTo(smallBid1.price)
-        Assertions.assertThat(match1.shares).isEqualTo(smallBid1.shares)
-        Assertions.assertThat(match1.matchedEntries).hasSize(1)
-        Assertions.assertThat(match1.matchedEntries[0].orderId).isEqualTo(bigAsk.orderId)
-        Assertions.assertThat(match1.matchedEntries[0].price).isEqualTo(bigAsk.price)
-        Assertions.assertThat(match1.matchedEntries[0].shares).isEqualTo(smallBid1.shares)
+        Assertions.assertThat(match1).hasSize(1)
+        Assertions.assertThat(match1[0].orderId).isEqualTo(smallBid1.orderId)
+        Assertions.assertThat(match1[0].price).isEqualTo(smallBid1.price)
+        Assertions.assertThat(match1[0].shares).isEqualTo(smallBid1.shares)
+        Assertions.assertThat(match1[0].matchedEntries).hasSize(1)
+        Assertions.assertThat(match1[0].matchedEntries[0].orderId).isEqualTo(bigAsk.orderId)
+        Assertions.assertThat(match1[0].matchedEntries[0].price).isEqualTo(bigAsk.price)
+        Assertions.assertThat(match1[0].matchedEntries[0].shares).isEqualTo(smallBid1.shares)
 
-        Assertions.assertThat(match2).isNotNull
-        Assertions.assertThat(match2!!.orderId).isEqualTo(smallBid2.orderId)
-        Assertions.assertThat(match2.price).isEqualTo(smallBid2.price)
-        Assertions.assertThat(match2.shares).isEqualTo(smallBid2.shares)
-        Assertions.assertThat(match2.matchedEntries).hasSize(1)
-        Assertions.assertThat(match2.matchedEntries[0].orderId).isEqualTo(bigAsk.orderId)
-        Assertions.assertThat(match2.matchedEntries[0].price).isEqualTo(bigAsk.price)
-        Assertions.assertThat(match2.matchedEntries[0].shares).isEqualTo(smallBid2.shares)
-
+        Assertions.assertThat(match2).hasSize(1)
+        Assertions.assertThat(match2[0].orderId).isEqualTo(smallBid2.orderId)
+        Assertions.assertThat(match2[0].price).isEqualTo(smallBid2.price)
+        Assertions.assertThat(match2[0].shares).isEqualTo(smallBid2.shares)
+        Assertions.assertThat(match2[0].matchedEntries).hasSize(1)
+        Assertions.assertThat(match2[0].matchedEntries[0].orderId).isEqualTo(bigAsk.orderId)
+        Assertions.assertThat(match2[0].matchedEntries[0].price).isEqualTo(bigAsk.price)
+        Assertions.assertThat(match2[0].matchedEntries[0].shares).isEqualTo(smallBid2.shares)
+//
         Assertions.assertThat(orderBook.bidsPoll()).isNull()
         val asksPoll = orderBook.asksPoll()
         Assertions.assertThat(asksPoll).isNotNull
         Assertions.assertThat(asksPoll!!.orderId).isEqualTo(bigAsk.orderId)
         Assertions.assertThat(asksPoll.price).isEqualTo(bigAsk.price)
-        Assertions.assertThat(asksPoll.shares()).isEqualTo(bigAsk.shares - match1.shares - match2.shares)
+        Assertions.assertThat(asksPoll.shares()).isEqualTo(bigAsk.shares - match1[0].shares - match2[0].shares)
         Assertions.assertThat(asksPoll.partialMatched).isTrue
         Assertions.assertThat(asksPoll.partialMatchedEntries).hasSize(2)
         Assertions.assertThat(asksPoll.partialMatchedEntries[0].orderId).isEqualTo(smallBid1.orderId)
@@ -551,21 +555,23 @@ internal class OrderBooksTest {
         val bidsPoll = orderBook.bidsPoll()
 
         log.info("$match1")
+        log.info("${match1[0]}")
+        log.info("${match1[1]}")
         log.info("$match2")
         log.info("$bidsPoll")
 
         // then
-        Assertions.assertThat(match1).isNotNull
-        Assertions.assertThat(match2).isNotNull
+        Assertions.assertThat(match1).hasSize(2)
+        Assertions.assertThat(match2).hasSize(0)
         Assertions.assertThat(bidsPoll).isNotNull
 
-        Assertions.assertThat(match1!!.orderId).isEqualTo(smallAskLimit1.orderId)
-        Assertions.assertThat(match1.price).isEqualTo(smallAskLimit1.price)
-        Assertions.assertThat(match1.shares).isEqualTo(smallAskLimit1.shares)
+        Assertions.assertThat(match1[0].orderId).isEqualTo(smallAskLimit1.orderId)
+        Assertions.assertThat(match1[0].price).isEqualTo(smallAskLimit1.price)
+        Assertions.assertThat(match1[0].shares).isEqualTo(smallAskLimit1.shares)
 
-        Assertions.assertThat(match2!!.orderId).isEqualTo(smallAskLimit2.orderId)
-        Assertions.assertThat(match2.price).isEqualTo(smallAskLimit2.price)
-        Assertions.assertThat(match2.shares).isEqualTo(smallAskLimit2.shares)
+        Assertions.assertThat(match1[1].orderId).isEqualTo(smallAskLimit2.orderId)
+        Assertions.assertThat(match1[1].price).isEqualTo(smallAskLimit2.price)
+        Assertions.assertThat(match1[1].shares).isEqualTo(smallAskLimit2.shares)
 
         Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(bigBidLimit.orderId)
         Assertions.assertThat(bidsPoll.shares).isEqualTo(bigBidLimit.shares)
@@ -623,14 +629,14 @@ internal class OrderBooksTest {
 
         orderBook.addOrder(smallBid)
         val match2 = orderBook.match(PriceType.LIMIT, OrderType.BID)
-        val matchedEntries2 = match2?.matchedEntries
+        val matchedEntries2 = match2[0].matchedEntries
 
         orderBook.addOrder(bigBid)
         val match3 = orderBook.match(PriceType.LIMIT, OrderType.BID)
 
         orderBook.addOrder(lastBigAsk)
         val match4 = orderBook.match(PriceType.LIMIT, OrderType.BID)
-        val matchedEntries4 = match4?.matchedEntries
+        val matchedEntries4 = match4[0].matchedEntries
 
         val match5 = orderBook.match(PriceType.LIMIT, OrderType.BID)
 
@@ -638,14 +644,14 @@ internal class OrderBooksTest {
         val leftAsk = orderBook.asksPoll()
 
         // then
-        Assertions.assertThat(match1).isNull()
-        Assertions.assertThat(match2).isNotNull
-        Assertions.assertThat(match3).isNull()
-        Assertions.assertThat(match4).isNotNull
-        Assertions.assertThat(match5).isNull()
+        Assertions.assertThat(match1).hasSize(0)
+        Assertions.assertThat(match2).hasSize(1)
+        Assertions.assertThat(match3).hasSize(1)
+        Assertions.assertThat(match4).hasSize(1)
+        Assertions.assertThat(match5).hasSize(0)
 
         Assertions.assertThat(matchedEntries2).hasSize(1)
-        Assertions.assertThat(matchedEntries4).hasSize(2)
+        Assertions.assertThat(matchedEntries4).hasSize(1)
 
         Assertions.assertThat(emptyBid).isNull()
         Assertions.assertThat(leftAsk).isNotNull
@@ -655,7 +661,7 @@ internal class OrderBooksTest {
     @Test
     fun limitOrderSimulation_2() {
         // given
-        val orderBook = OrderBook(Symbol.AAPL)
+        val orderBook = OrderBook(Symbol.MSFT)
 
         val bid9500 = Order.Builder()
             .orderId(UUID.randomUUID().toString())
@@ -740,8 +746,8 @@ internal class OrderBooksTest {
         orderBook.addOrder(marketMaker) // 1000
 
         val match2 = orderBook.match(PriceType.LIMIT, OrderType.BID)
-        val matchedEntries2 = match2!!.matchedEntries
-        val sum = match2.matchedShare()
+        val matchedEntries2 = match2[0].matchedEntries
+        val sum = match2[0].matchedShare()
         val ask9800Price = ask9800.price.multiply(BigDecimal(ask9800.shares))
         val ask9900Price = ask9900.price.multiply(BigDecimal(ask9900.shares))
         val ask10000Price = ask10000.price.multiply(BigDecimal(500))
@@ -754,9 +760,15 @@ internal class OrderBooksTest {
         val remainBid2 = orderBook.bidsPoll()
         val remainBid3 = orderBook.bidsPoll()
 
+        log.info("$match1")
+        log.info("$match2")
+        log.info("${match2[0].matchedEntries[0]}")
+        log.info("${match2[0].matchedEntries[1]}")
+        log.info("${match2[0].matchedEntries[2]}")
+
         // then
-        Assertions.assertThat(match1).isNull()
-        Assertions.assertThat(match2).isNotNull
+        Assertions.assertThat(match1).hasSize(0)
+        Assertions.assertThat(match2).hasSize(1)
         Assertions.assertThat(matchedEntries2).hasSize(3)
 
         Assertions.assertThat(remainAsk).isNotNull
@@ -768,11 +780,11 @@ internal class OrderBooksTest {
         Assertions.assertThat(remainBid2!!.orderId).isEqualTo(bid9600.orderId)
         Assertions.assertThat(remainBid3!!.orderId).isEqualTo(bid9500.orderId)
 
-        Assertions.assertThat(match2.orderId).isEqualTo(marketMaker.orderId)
-        Assertions.assertThat(match2.price).isEqualTo(marketMaker.price)
-        Assertions.assertThat(match2.shares).isEqualTo(marketMaker.shares)
-        Assertions.assertThat(match2.shares).isEqualTo(sum)
-        Assertions.assertThat(match2.averagePrice()).isEqualTo(askAveragePrice)
+        Assertions.assertThat(match2[0].orderId).isEqualTo(marketMaker.orderId)
+        Assertions.assertThat(match2[0].price).isEqualTo(marketMaker.price)
+        Assertions.assertThat(match2[0].shares).isEqualTo(marketMaker.shares)
+        Assertions.assertThat(match2[0].shares).isEqualTo(sum)
+        Assertions.assertThat(match2[0].averagePrice()).isEqualTo(askAveragePrice)
 
         Assertions.assertThat(matchedEntries2[0].orderId).isEqualTo(ask9800.orderId)
         Assertions.assertThat(matchedEntries2[1].orderId).isEqualTo(ask9900.orderId)
@@ -799,7 +811,8 @@ internal class OrderBooksTest {
         val bidsPoll = orderBook.bidsPoll()
 
         // then
-        Assertions.assertThat(match).isNull()
+        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(0)
         Assertions.assertThat(bidsPoll).isNotNull
         Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(marketBid.orderId)
         Assertions.assertThat(bidsPoll.shares).isEqualTo(marketBid.shares)
@@ -834,16 +847,16 @@ internal class OrderBooksTest {
         val match = orderBook.match(PriceType.MARKET, OrderType.BID)
 
         // then
-        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(1)
         Assertions.assertThat(orderBook.bidsPoll()).isNull()
         Assertions.assertThat(orderBook.asksPoll()).isNull()
-        Assertions.assertThat(match!!.matchedEntries).hasSize(1)
+        Assertions.assertThat(match[0].matchedEntries).hasSize(1)
 
-        Assertions.assertThat(match.orderId).isEqualTo(marketBid.orderId)
-        Assertions.assertThat(match.shares).isEqualTo(marketBid.shares)
-        Assertions.assertThat(match.matchedEntries[0].orderId).isEqualTo(limitAsk.orderId)
-        Assertions.assertThat(match.matchedEntries[0].shares).isEqualTo(limitAsk.shares)
-        Assertions.assertThat(match.matchedEntries[0].price).isEqualTo(limitAsk.price)
+        Assertions.assertThat(match[0].orderId).isEqualTo(marketBid.orderId)
+        Assertions.assertThat(match[0].shares).isEqualTo(marketBid.shares)
+        Assertions.assertThat(match[0].matchedEntries[0].orderId).isEqualTo(limitAsk.orderId)
+        Assertions.assertThat(match[0].matchedEntries[0].shares).isEqualTo(limitAsk.shares)
+        Assertions.assertThat(match[0].matchedEntries[0].price).isEqualTo(limitAsk.price)
     }
 
     @Test
@@ -892,19 +905,19 @@ internal class OrderBooksTest {
         log.info("$asksPoll")
 
         // then
-        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(1)
         Assertions.assertThat(bidsPoll).isNull()
         Assertions.assertThat(asksPoll).isNull()
 
-        Assertions.assertThat(match!!.orderId).isEqualTo(bigBidMarket.orderId)
-        Assertions.assertThat(match.shares).isEqualTo(bigBidMarket.shares)
-        Assertions.assertThat(match.matchedEntries).hasSize(2)
-        Assertions.assertThat(match.matchedEntries[0].orderId).isEqualTo(smallLimitAsk1.orderId)
-        Assertions.assertThat(match.matchedEntries[0].price).isEqualTo(smallLimitAsk1.price)
-        Assertions.assertThat(match.matchedEntries[0].shares).isEqualTo(smallLimitAsk1.shares)
-        Assertions.assertThat(match.matchedEntries[1].orderId).isEqualTo(smallLimitAsk2.orderId)
-        Assertions.assertThat(match.matchedEntries[1].price).isEqualTo(smallLimitAsk2.price)
-        Assertions.assertThat(match.matchedEntries[1].shares).isEqualTo(smallLimitAsk2.shares)
+        Assertions.assertThat(match[0].orderId).isEqualTo(bigBidMarket.orderId)
+        Assertions.assertThat(match[0].shares).isEqualTo(bigBidMarket.shares)
+        Assertions.assertThat(match[0].matchedEntries).hasSize(2)
+        Assertions.assertThat(match[0].matchedEntries[0].orderId).isEqualTo(smallLimitAsk1.orderId)
+        Assertions.assertThat(match[0].matchedEntries[0].price).isEqualTo(smallLimitAsk1.price)
+        Assertions.assertThat(match[0].matchedEntries[0].shares).isEqualTo(smallLimitAsk1.shares)
+        Assertions.assertThat(match[0].matchedEntries[1].orderId).isEqualTo(smallLimitAsk2.orderId)
+        Assertions.assertThat(match[0].matchedEntries[1].price).isEqualTo(smallLimitAsk2.price)
+        Assertions.assertThat(match[0].matchedEntries[1].shares).isEqualTo(smallLimitAsk2.shares)
     }
 
     @Test
@@ -938,17 +951,17 @@ internal class OrderBooksTest {
         val asksPoll = orderBook.asksPoll()
 
         // then
-        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(1)
         Assertions.assertThat(bidsPoll).isNull()
         Assertions.assertThat(asksPoll).isNotNull
-        Assertions.assertThat(match!!.matchedEntries).hasSize(1)
+        Assertions.assertThat(match[0].matchedEntries).hasSize(1)
 
-        Assertions.assertThat(match.orderId).isEqualTo(bidMarket.orderId)
-        Assertions.assertThat(match.shares).isEqualTo(bidMarket.shares)
+        Assertions.assertThat(match[0].orderId).isEqualTo(bidMarket.orderId)
+        Assertions.assertThat(match[0].shares).isEqualTo(bidMarket.shares)
 
-        Assertions.assertThat(match.matchedEntries[0].orderId).isEqualTo(bigAskLimit.orderId)
-        Assertions.assertThat(match.matchedEntries[0].price).isEqualTo(bigAskLimit.price)
-        Assertions.assertThat(match.matchedEntries[0].shares).isEqualTo(bidMarket.shares)
+        Assertions.assertThat(match[0].matchedEntries[0].orderId).isEqualTo(bigAskLimit.orderId)
+        Assertions.assertThat(match[0].matchedEntries[0].price).isEqualTo(bigAskLimit.price)
+        Assertions.assertThat(match[0].matchedEntries[0].shares).isEqualTo(bidMarket.shares)
 
         Assertions.assertThat(asksPoll!!.orderId).isEqualTo(bigAskLimit.orderId)
         Assertions.assertThat(asksPoll.shares()).isEqualTo(bigAskLimit.shares - bidMarket.shares)
@@ -975,7 +988,8 @@ internal class OrderBooksTest {
         val asksPoll = orderBook.asksPoll()
 
         // then
-        Assertions.assertThat(match).isNull()
+        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(0)
         Assertions.assertThat(asksPoll).isNotNull
         Assertions.assertThat(asksPoll!!.orderId).isEqualTo(marketAsk.orderId)
         Assertions.assertThat(asksPoll.shares).isEqualTo(marketAsk.shares)
@@ -1013,16 +1027,16 @@ internal class OrderBooksTest {
         val asksPoll = orderBook.asksPoll()
 
         // then
-        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(1)
         Assertions.assertThat(bidsPoll).isNull()
         Assertions.assertThat(asksPoll).isNull()
 
-        Assertions.assertThat(match!!.orderId).isEqualTo(askMarket.orderId)
-        Assertions.assertThat(match.shares).isEqualTo(askMarket.shares)
-        Assertions.assertThat(match.matchedEntries).hasSize(1)
-        Assertions.assertThat(match.matchedEntries[0].orderId).isEqualTo(bidLimit.orderId)
-        Assertions.assertThat(match.matchedEntries[0].price).isEqualTo(bidLimit.price)
-        Assertions.assertThat(match.matchedEntries[0].shares).isEqualTo(bidLimit.shares)
+        Assertions.assertThat(match[0].orderId).isEqualTo(askMarket.orderId)
+        Assertions.assertThat(match[0].shares).isEqualTo(askMarket.shares)
+        Assertions.assertThat(match[0].matchedEntries).hasSize(1)
+        Assertions.assertThat(match[0].matchedEntries[0].orderId).isEqualTo(bidLimit.orderId)
+        Assertions.assertThat(match[0].matchedEntries[0].price).isEqualTo(bidLimit.price)
+        Assertions.assertThat(match[0].matchedEntries[0].shares).isEqualTo(bidLimit.shares)
     }
 
     @Test
@@ -1057,16 +1071,16 @@ internal class OrderBooksTest {
         val bidsPoll = orderBook.bidsPoll()
 
         // then
-        Assertions.assertThat(match).isNotNull
+        Assertions.assertThat(match).hasSize(1)
         Assertions.assertThat(asksPoll).isNull()
         Assertions.assertThat(bidsPoll).isNotNull
-        Assertions.assertThat(match!!.matchedEntries).hasSize(1)
+        Assertions.assertThat(match[0].matchedEntries).hasSize(1)
 
-        Assertions.assertThat(match.orderId).isEqualTo(smallMarketAsk.orderId)
-        Assertions.assertThat(match.shares).isEqualTo(smallMarketAsk.shares)
-        Assertions.assertThat(match.matchedEntries[0].orderId).isEqualTo(bigBidLimit.orderId)
-        Assertions.assertThat(match.matchedEntries[0].shares).isEqualTo(smallMarketAsk.shares)
-        Assertions.assertThat(match.matchedEntries[0].price).isEqualTo(bigBidLimit.price)
+        Assertions.assertThat(match[0].orderId).isEqualTo(smallMarketAsk.orderId)
+        Assertions.assertThat(match[0].shares).isEqualTo(smallMarketAsk.shares)
+        Assertions.assertThat(match[0].matchedEntries[0].orderId).isEqualTo(bigBidLimit.orderId)
+        Assertions.assertThat(match[0].matchedEntries[0].shares).isEqualTo(smallMarketAsk.shares)
+        Assertions.assertThat(match[0].matchedEntries[0].price).isEqualTo(bigBidLimit.price)
 
         Assertions.assertThat(bidsPoll!!.orderId).isEqualTo(bigBidLimit.orderId)
         Assertions.assertThat(bidsPoll.shares()).isEqualTo(bigBidLimit.shares - smallMarketAsk.shares)
@@ -1074,18 +1088,71 @@ internal class OrderBooksTest {
 
     @Test
     fun askMarketBigAskMatch() {
-        TODO()
         // given
         val orderBook = OrderBook(Symbol.AAPL)
 
+        val bigMarketAsk = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.ASK)
+            .priceType(PriceType.MARKET)
+            .price(BigDecimal.ZERO)
+            .symbol(Symbol.AAPL)
+            .shares(3000)
+            .build()
+
+        val smallLimitBid1 = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.BID)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(10_000))
+            .symbol(Symbol.AAPL)
+            .shares(1000)
+            .build()
+
+        val smallLimitBid2 = Order.Builder()
+            .orderId(UUID.randomUUID().toString())
+            .orderType(OrderType.BID)
+            .priceType(PriceType.LIMIT)
+            .price(BigDecimal(10_000))
+            .symbol(Symbol.AAPL)
+            .shares(1500)
+            .build()
+
         // when
+        orderBook.addOrder(smallLimitBid1)
+        val match1 = orderBook.match(smallLimitBid1.priceType, smallLimitBid1.orderType)
+        orderBook.addOrder(smallLimitBid2)
+        val match2 = orderBook.match(smallLimitBid2.priceType, smallLimitBid2.orderType)
+        orderBook.addOrder(bigMarketAsk)
+        val match3 = orderBook.match(bigMarketAsk.priceType, bigMarketAsk.orderType)
+        val asksPoll = orderBook.asksPoll()
+        val bidsPoll = orderBook.bidsPoll()
+
+        log.info("$match3")
+        log.info("${match3[0]}")
+        log.info("${match3[1]}")
 
         // then
+        Assertions.assertThat(match1).hasSize(0)
+        Assertions.assertThat(match2).hasSize(0)
+        Assertions.assertThat(match3).hasSize(2)
+        Assertions.assertThat(asksPoll).isNotNull
+        Assertions.assertThat(bidsPoll).isNull()
+
+        Assertions.assertThat(match3[0].orderId).isEqualTo(smallLimitBid1.orderId)
+        Assertions.assertThat(match3[0].shares).isEqualTo(smallLimitBid1.shares)
+        Assertions.assertThat(match3[0].price).isEqualTo(smallLimitBid1.price)
+
+        Assertions.assertThat(match3[1].orderId).isEqualTo(smallLimitBid2.orderId)
+        Assertions.assertThat(match3[1].shares).isEqualTo(smallLimitBid2.shares)
+        Assertions.assertThat(match3[1].price).isEqualTo(smallLimitBid2.price)
+
+        Assertions.assertThat(asksPoll!!.orderId).isEqualTo(bigMarketAsk.orderId)
+        Assertions.assertThat(asksPoll.shares()).isEqualTo(500)
     }
 
     @Test
     fun realSimulation() {
-        TODO("Test Pass 확인")
         // given
         val orderBook = OrderBook(Symbol.AAPL)
         val ask1 = Order.Builder()
@@ -1131,13 +1198,13 @@ internal class OrderBooksTest {
 
         // when
         orderBook.addOrder(ask1)
-        val match1 = orderBook.match(ask1.priceType, ask1.orderType)
+        val match1 = orderBook.match(ask1.priceType, ask1.orderType) // null
         orderBook.addOrder(bid1)
-        val match2 = orderBook.match(bid1.priceType, bid1.orderType)
+        val match2 = orderBook.match(bid1.priceType, bid1.orderType) // null
         orderBook.addOrder(ask2)
-        val match3 = orderBook.match(ask2.priceType, ask2.orderType)
+        val match3 = orderBook.match(ask2.priceType, ask2.orderType) // not null
         orderBook.addOrder(bid2)
-        val match4 = orderBook.match(bid2.priceType, bid2.orderType)
+        val match4 = orderBook.match(bid2.priceType, bid2.orderType) // not null
         orderBook.addOrder(bid3)
         val match5 = orderBook.match(bid3.priceType, bid3.orderType)
         val leftAsk = orderBook.asksPoll()
@@ -1150,18 +1217,18 @@ internal class OrderBooksTest {
         log.info("{}", match4)
         log.info("{}", match5)
         log.info("{}", leftAsk)
-        Assertions.assertThat(match1).isNull()
-        Assertions.assertThat(match2).isNull()
-        Assertions.assertThat(match3).isNotNull
-        Assertions.assertThat(match4).isNotNull
-        Assertions.assertThat(match5).isNotNull
-        Assertions.assertThat(match3!!.matchedEntries).hasSize(1)
-        Assertions.assertThat(match4!!.matchedEntries).hasSize(1)
-        Assertions.assertThat(match5!!.matchedEntries).hasSize(2)
-        Assertions.assertThat(match3.matchedEntries[0].orderId).isEqualTo(ask2.orderId)
-        Assertions.assertThat(match4.matchedEntries[0].orderId).isEqualTo(ask2.orderId)
-        Assertions.assertThat(match5.matchedEntries[0].orderId).isEqualTo(ask2.orderId)
-        Assertions.assertThat(match5.matchedEntries[1].orderId).isEqualTo(ask1.orderId)
+        Assertions.assertThat(match1).hasSize(0)
+        Assertions.assertThat(match2).hasSize(0)
+        Assertions.assertThat(match3).hasSize(1)
+        Assertions.assertThat(match4).hasSize(1)
+        Assertions.assertThat(match5).hasSize(1)
+        Assertions.assertThat(match3[0].matchedEntries).hasSize(1)
+        Assertions.assertThat(match4[0].matchedEntries).hasSize(1)
+        Assertions.assertThat(match5[0].matchedEntries).hasSize(2)
+        Assertions.assertThat(match3[0].matchedEntries[0].orderId).isEqualTo(ask2.orderId)
+        Assertions.assertThat(match4[0].matchedEntries[0].orderId).isEqualTo(ask2.orderId)
+        Assertions.assertThat(match5[0].matchedEntries[0].orderId).isEqualTo(ask2.orderId)
+        Assertions.assertThat(match5[0].matchedEntries[1].orderId).isEqualTo(ask1.orderId)
         Assertions.assertThat(leftAsk!!.orderId).isEqualTo(ask1.orderId)
         Assertions.assertThat(leftAsk.shares()).isEqualTo(12)
     }

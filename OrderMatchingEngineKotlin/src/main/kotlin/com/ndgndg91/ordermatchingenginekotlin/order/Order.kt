@@ -12,7 +12,16 @@ class Order private constructor(
     val priceType: PriceType,
     val timestamp: LocalDateTime
 ){
-
+    fun toOrderEntry(): OrderEntry = OrderEntry(
+        orderId = orderId,
+        orderType = orderType,
+        shares = shares,
+        priceType = priceType,
+        price = price,
+        timestamp = timestamp,
+        partialMatched = false,
+        partialMatchedEntries = mutableListOf()
+    )
 
     data class Builder(
         private var orderId: String? = null,

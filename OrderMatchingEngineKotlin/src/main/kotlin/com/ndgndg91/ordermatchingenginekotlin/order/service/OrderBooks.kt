@@ -61,7 +61,7 @@ class OrderBooks {
         return findResult.getOrNull()
     }
 
-    fun match(symbol: Symbol, priceType: PriceType, orderType: OrderType): MatchResult? {
+    fun match(symbol: Symbol, priceType: PriceType, orderType: OrderType): List<MatchResult> {
         val orderBook = m[symbol]
         return orderBook!!.match(priceType, orderType)
     }

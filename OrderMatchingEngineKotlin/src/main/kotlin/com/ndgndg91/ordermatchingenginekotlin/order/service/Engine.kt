@@ -78,6 +78,6 @@ class Engine(
         log.info("{}", event)
         orderBooks.match(event.symbol, event.priceType, event.orderType)
             .also { log.info("$it"); }
-            ?.let { matchOrderRepository.save(it) }
+            .let { matchOrderRepository.save(event.symbol, it) }
     }
 }

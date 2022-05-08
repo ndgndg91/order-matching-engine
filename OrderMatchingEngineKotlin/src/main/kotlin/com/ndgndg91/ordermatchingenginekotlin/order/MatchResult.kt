@@ -11,7 +11,8 @@ class MatchResult(
     val shares: Int,
     val priceType: PriceType,
     val price: BigDecimal,
-    private val timestamp: LocalDateTime,
+    val timestamp: LocalDateTime,
+    val matchedAt: LocalDateTime = LocalDateTime.now(),
     var matchedEntries: List<MatchedEntry> = listOf()
 ) {
     companion object {
@@ -75,7 +76,7 @@ class MatchResult(
         .divide(BigDecimal(this.shares), RoundingMode.CEILING)
 
     override fun toString(): String {
-        return "MatchResult(symbol=$symbol, orderId='$orderId', orderType=$orderType, shares=$shares, priceType=$priceType, price=$price, timestamp=$timestamp, matchedEntries=$matchedEntries)"
+        return "MatchResult(symbol=$symbol, orderId='$orderId', orderType=$orderType, shares=$shares, priceType=$priceType, price=$price, matchedAt=${matchedAt}, timestamp=$timestamp, matchedEntries=$matchedEntries)"
     }
 
 

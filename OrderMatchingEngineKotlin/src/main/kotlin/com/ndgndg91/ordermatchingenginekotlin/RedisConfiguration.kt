@@ -1,12 +1,14 @@
 package com.ndgndg91.ordermatchingenginekotlin
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.ndgndg91.ordermatchingenginekotlin.order.Symbol
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer
 
 
@@ -31,5 +33,10 @@ class RedisConfiguration {
         template.valueSerializer = jackson2JsonRedisSerializer
         template.afterPropertiesSet()
         return template
+    }
+
+    @Bean
+    fun channels(): Map<Symbol, ChannelTopic> {
+        return Symbol.values().associateWith { ChannelTopic("${it.name}:matched-channel") }
     }
 }

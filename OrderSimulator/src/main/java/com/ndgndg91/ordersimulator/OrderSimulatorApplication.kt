@@ -43,7 +43,7 @@ open class OrderSimulatorApplication {
 
                 val addOrderRequest = AddOrderRequest(orderType, symbol, shares, priceType, price)
                 kotlinEngineClient.addOrder(addOrderRequest)
-                javaEngineClient.addOrder(addOrderRequest)
+//                javaEngineClient.addOrder(addOrderRequest)
                 log.info("new request start")
                 Thread.sleep(200L)
             }

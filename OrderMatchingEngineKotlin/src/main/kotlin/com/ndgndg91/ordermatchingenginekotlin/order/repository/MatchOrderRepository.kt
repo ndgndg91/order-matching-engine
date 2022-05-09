@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository
 @Repository
 class MatchOrderRepository(
     private val redisTemplate: RedisTemplate<String, String>,
-    private val channels: Map<Symbol, ChannelTopic>
+    private val channels: Map<Symbol, ChannelTopic>,
 ) {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MatchOrderRepository::class.java)
@@ -21,7 +21,7 @@ class MatchOrderRepository(
     fun save(symbol: Symbol, matchResult: List<MatchResult>) {
         redisTemplate.opsForList().rightPush("${symbol}:matchedOrder", "$matchResult")
         matchResult.forEach{
-            redisTemplate.convertAndSend(channels[symbol]!!.topic, "${ChannelResult(it)}")
+            redisTemplate.convertAndSend(channels[symbol]!!.topic, ChannelResult(it))
         }.also { log.info("publish $symbol") }
     }
 

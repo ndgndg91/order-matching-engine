@@ -1,0 +1,23 @@
+<span>{{ title }} app is running!</span>
+
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let message of webSocketService.messages">
+    <td>{{message.symbol}}</td>
+    <td>{{message.price}}</td>
+    <td>{{message.timestamp}}</td>
+  </tr>
+  <tr>
+    <td>Klay Thompson</td>
+    <td>25</td>
+    <td>2,01</td>
+  </tr>
+  </tbody>
+</table>

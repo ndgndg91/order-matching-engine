@@ -1,5 +1,6 @@
 <span>{{ title }} app is running!</span>
 
+<button (click)="stompService.connect()">connect</button>
 <table>
   <thead>
   <tr>
@@ -9,15 +10,15 @@
   </tr>
   </thead>
   <tbody>
-  <tr *ngFor="let message of webSocketService.messages">
-    <td>{{message.symbol}}</td>
-    <td>{{message.price}}</td>
-    <td>{{message.timestamp}}</td>
+  <tr *ngFor="let message of stompService.receivedMessages">
+    <td>{{message}}</td>
+    <td>{{message}}</td>
+    <td>{{message}}</td>
   </tr>
   <tr>
     <td>Klay Thompson</td>
     <td>25</td>
-    <td>2,01</td>
+    <td (click)="stompService.send()">2,01</td>
   </tr>
   </tbody>
 </table>

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import {MatchedPriceMessage} from "../classes/MatchedPriceMessage";
-import {StompRService} from "@stomp/ng2-stompjs";
 
 @Injectable({
   providedIn: 'root'

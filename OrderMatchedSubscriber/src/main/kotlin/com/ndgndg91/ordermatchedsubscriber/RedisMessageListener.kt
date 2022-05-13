@@ -18,6 +18,7 @@ class RedisMessageListener(
         private val om = jacksonObjectMapper()
             .enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING)
     }
+
     override fun onMessage(message: Message, pattern: ByteArray?) {
         val string = String(message.body)
         val channel = String(message.channel)
@@ -27,5 +28,6 @@ class RedisMessageListener(
         val body: ChannelResult = om.readValue(string, ChannelResult::class.java)
         log.info("$body")
         log.info("========")
+        messagingTemplate.convertAndSend("/topic/message", string)
     }
 }

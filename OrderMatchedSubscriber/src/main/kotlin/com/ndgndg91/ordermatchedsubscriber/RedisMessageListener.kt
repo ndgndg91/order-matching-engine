@@ -28,6 +28,6 @@ class RedisMessageListener(
         val body: ChannelResult = om.readValue(string, ChannelResult::class.java)
         log.info("$body")
         log.info("========")
-        messagingTemplate.convertAndSend("/topic/message", string)
+        messagingTemplate.convertAndSend("/topic/message/${channel.split(":").first()}", string)
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.stereotype.Controller
 
 @Controller
-class StompController() {
+class StompController {
     companion object {
         private val log = LoggerFactory.getLogger(StompController::class.java)
     }
@@ -15,6 +15,6 @@ class StompController() {
     @SendTo("/topic/message") // client 는 해당 endpoint 를 구독한다.
     fun ttt(message: String): String {
         log.info(message)
-        return "시발"
+        return message
     }
 }

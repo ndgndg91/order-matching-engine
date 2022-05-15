@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {WebSocketService} from "./service/web-socket-service";
-import {StompService} from "./service/stomp-service";
+import {TradeStompService} from "./service/trade-stomp.service";
 
 @Component({
   selector: 'app-root',
@@ -10,7 +10,9 @@ import {StompService} from "./service/stomp-service";
 export class AppComponent implements OnInit{
   title = 'OrderMatchedWSClient';
 
-  constructor(public webSocketService: WebSocketService, public stompService: StompService) {}
+  constructor(public webSocketService: WebSocketService,
+              public tradeStompService: TradeStompService
+  ) {}
 
   ngOnInit(): void {
   }

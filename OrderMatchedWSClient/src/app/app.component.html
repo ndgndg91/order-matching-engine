@@ -1,6 +1,15 @@
 <span>{{ title }} app is running!</span>
 
-<button (click)="stompService.connect()">connect</button>
+<!--<button (click)="msftTradeSubscribeService.connect()">connect</button>-->
+<button (click)="tradeStompService.connect('AAPL')">aapl</button>
+<button (click)="tradeStompService.connect('MSFT')">msft</button>
+<button (click)="tradeStompService.connect('GOOG')">goog</button>
+<button (click)="tradeStompService.connect('AMZN')">amzn</button>
+<button (click)="tradeStompService.connect('TSLA')">tsla</button>
+<button (click)="tradeStompService.connect('TSM')">tsm</button>
+<button (click)="tradeStompService.connect('FB')">fb</button>
+<button (click)="tradeStompService.connect('KO')">ko</button>
+<button (click)="tradeStompService.send()">SEND</button>
 <table>
   <thead>
   <tr>
@@ -10,15 +19,125 @@
   </tr>
   </thead>
   <tbody>
-  <tr *ngFor="let message of stompService.receivedMessages">
-    <td>{{message}}</td>
-    <td>{{message}}</td>
-    <td>{{message}}</td>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('AAPL')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
   </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
   <tr>
-    <td>Klay Thompson</td>
-    <td>25</td>
-    <td (click)="stompService.send()">2,01</td>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('MSFT')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
+  </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('GOOG')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
+  </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('AMZN')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
+  </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('TSLA')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
+  </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('TSM')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
+  </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('FB')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
+  </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+  <tr>
+    <th>Symbol</th>
+    <th>Price</th>
+    <th>timestamp</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let trade of tradeStompService.tradesMap.get('KO')">
+    <td>{{trade.symbol}}</td>
+    <td>{{trade.price}}</td>
+    <td>{{trade.timestamp}}</td>
   </tr>
   </tbody>
 </table>

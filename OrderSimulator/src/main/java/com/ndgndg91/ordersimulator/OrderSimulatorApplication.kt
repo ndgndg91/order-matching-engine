@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
+import java.util.concurrent.Executors
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -27,6 +28,7 @@ open class OrderSimulatorApplication {
 
     @Bean
     open fun runner(): CommandLineRunner {
+        val executor = Executors.newFixedThreadPool(20)
         return CommandLineRunner {
             val maxShare = 5000
             val minShare = 50
@@ -42,10 +44,13 @@ open class OrderSimulatorApplication {
                 val symbol = symbol(Random.nextInt(8))
 
                 val addOrderRequest = AddOrderRequest(orderType, symbol, shares, priceType, price)
-                kotlinEngineClient.addOrder(addOrderRequest)
+
 //                javaEngineClient.addOrder(addOrderRequest)
                 log.info("new request start")
-                Thread.sleep(200L)
+                val future = executor.submit { kotlinEngineClient.addOrder(addOrderRequest) }
+                val get = future.get()
+                log.info("$get")
+                Thread.sleep(25)
             }
         }
     }

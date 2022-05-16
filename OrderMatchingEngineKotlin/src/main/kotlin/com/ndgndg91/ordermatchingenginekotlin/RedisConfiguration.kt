@@ -24,13 +24,13 @@ class RedisConfiguration {
     fun redisTemplate(): RedisTemplate<String, String> {
         val om = ObjectMapper()
         // redis serialize
-        val jackson2JsonRedisSerializer: Jackson2JsonRedisSerializer<*> = Jackson2JsonRedisSerializer(Any::class.java)
+        val jackson2JsonRedisSerializer: Jackson2JsonRedisSerializer<*> = Jackson2JsonRedisSerializer(String::class.java)
         jackson2JsonRedisSerializer.setObjectMapper(om)
         val template = StringRedisTemplate(lettuceConnectionFactory())
+        template.keySerializer = jackson2JsonRedisSerializer
         template.valueSerializer = jackson2JsonRedisSerializer
         template.hashKeySerializer = jackson2JsonRedisSerializer
         template.hashValueSerializer = jackson2JsonRedisSerializer
-        template.valueSerializer = jackson2JsonRedisSerializer
         template.afterPropertiesSet()
         return template
     }

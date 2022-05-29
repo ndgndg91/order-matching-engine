@@ -1,6 +1,7 @@
 package com.ndgndg91.ordermatchedsse
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
@@ -12,9 +13,15 @@ import org.springframework.data.redis.serializer.RedisSerializationContext
 @Configuration
 class RedisConfiguration {
 
+    @Value("\${spring.redis.host}")
+    private lateinit var host: String
+
+    @Value("\${spring.redis.port}")
+    private lateinit var port: String
+
     @Bean
     fun reactiveRedisConnectionFactory(): ReactiveRedisConnectionFactory {
-        return LettuceConnectionFactory()
+        return LettuceConnectionFactory(host, port.toInt())
     }
 
     @Bean

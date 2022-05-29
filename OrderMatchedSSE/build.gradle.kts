@@ -17,6 +17,14 @@ configurations {
     }
 }
 
+val testcontainersVersion = "1.17.2"
+
+dependencyManagement {
+    imports {
+        mavenBom("org.testcontainers:testcontainers-bom:${testcontainersVersion}")
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -31,6 +39,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter:1.17.2")
     testImplementation("io.projectreactor:reactor-test")
 }
 
